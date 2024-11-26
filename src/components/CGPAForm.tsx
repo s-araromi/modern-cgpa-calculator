@@ -22,6 +22,7 @@ const CGPAForm = () => {
   const [cgpa, setCGPA] = useState<number | null>(null);
   const [targetCGPA, setTargetCGPA] = useState<string>('');
   const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [remainingUnits, setRemainingUnits] = useState<number>(0);
 
   const gradePoints = {
     '4.0': {
@@ -175,6 +176,83 @@ const CGPAForm = () => {
       recommendations,
       targetAchievable,
     });
+  };
+
+  // Function to calculate required grades for target CGPA
+  const calculateRequiredGrades = (currentCGPA: number, target: number, remainingUnits: number) => {
+    const scaleMaxPoints = {
+      '4.0': 4.0,
+      '5.0': 5.0,
+      '7.0': 7.0
+    };
+
+    const currentTotalPoints = currentCGPA * getTotalCredits();
+    const targetTotalPoints = target * (getTotalCredits() + remainingUnits);
+    const requiredPoints = targetTotalPoints - currentTotalPoints;
+    const requiredAverage = requiredPoints / remainingUnits;
+
+    const recommendations: string[] = [];
+    const maxPoint = scaleMaxPoints[scale];
+    const isAchievable = requiredAverage <= maxPoint;
+
+    if (!isAchievable) {
+      recommendations.push(`Target CGPA of ${target} is not achievable with ${remainingUnits} remaining units.`);
+      recommendations.push(`Even with all A grades, the maximum achievable CGPA would be ${((currentTotalPoints + (maxPoint * remainingUnits)) / (getTotalCredits() + remainingUnits)).toFixed(2)}`);
+    } else {
+      const gradeNeeded = getRequiredGrade(requiredAverage);
+      recommendations.push(`To achieve a CGPA of ${target}:`);
+      recommendations.push(`- You need to maintain an average grade of ${gradeNeeded} or better in your remaining ${remainingUnits} units`);
+      recommendations.push(`- This means scoring at least ${(requiredAverage).toFixed(2)} grade points per course`);
+      
+      if (requiredAverage > currentCGPA) {
+        recommendations.push(`- This requires improving your current performance by ${((requiredAverage - currentCGPA) * 100 / currentCGPA).toFixed(1)}%`);
+      }
+    }
+
+    return {
+      predictedCGPA: target,
+      recommendations,
+      targetAchievable: isAchievable
+    };
+  };
+
+  // Helper function to get required grade letter based on point average
+  const getRequiredGrade = (pointAverage: number): string => {
+    const gradeRanges = {
+      '4.0': [
+        { min: 3.5, grade: 'A' },
+        { min: 2.5, grade: 'B' },
+        { min: 1.5, grade: 'C' },
+        { min: 0.5, grade: 'D' },
+        { min: 0, grade: 'F' }
+      ],
+      '5.0': [
+        { min: 4.5, grade: 'A' },
+        { min: 3.5, grade: 'B' },
+        { min: 2.5, grade: 'C' },
+        { min: 1.5, grade: 'D' },
+        { min: 0, grade: 'F' }
+      ],
+      '7.0': [
+        { min: 6.0, grade: 'A' },
+        { min: 5.0, grade: 'B+' },
+        { min: 4.0, grade: 'B' },
+        { min: 3.0, grade: 'C+' },
+        { min: 2.0, grade: 'C' },
+        { min: 1.0, grade: 'D' },
+        { min: 0, grade: 'F' }
+      ]
+    };
+
+    const grades = gradeRanges[scale];
+    for (const { min, grade } of grades) {
+      if (pointAverage >= min) return grade;
+    }
+    return 'F';
+  };
+
+  const getTotalCredits = () => {
+    return courses.reduce((acc, course) => acc + course.credits, 0);
   };
 
   return (
@@ -335,6 +413,72 @@ const CGPAForm = () => {
           </div>
         )}
       </div>
+
+      {/* Target CGPA Section */}
+      {cgpa !== null && (
+        <div className="mt-8 p-6 bg-white/50 backdrop-blur-md rounded-xl shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Set Your CGPA Goal</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Target CGPA
+              </label>
+              <input
+                type="number"
+                value={targetCGPA}
+                onChange={(e) => setTargetCGPA(e.target.value)}
+                step="0.01"
+                min="0"
+                max={scale}
+                className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder={`Enter target CGPA (max ${scale})`}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Remaining Credit Units
+              </label>
+              <input
+                type="number"
+                value={remainingUnits}
+                onChange={(e) => setRemainingUnits(Number(e.target.value))}
+                min="0"
+                className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter remaining units"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (targetCGPA && remainingUnits > 0) {
+                const prediction = calculateRequiredGrades(cgpa, Number(targetCGPA), remainingUnits);
+                setPrediction(prediction);
+              }
+            }}
+            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Calculate Required Grades
+          </button>
+
+          {prediction && (
+            <div className="mt-4 p-4 rounded-lg bg-white/70">
+              <h4 className="font-semibold text-gray-800 mb-2">
+                Goal Analysis
+              </h4>
+              <div className="space-y-2">
+                {prediction.recommendations.map((rec, index) => (
+                  <p key={index} className={`text-sm ${index === 0 ? 'font-medium' : ''} ${prediction.targetAchievable ? 'text-gray-600' : 'text-red-600'}`}>
+                    {rec}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
