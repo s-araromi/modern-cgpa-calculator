@@ -1,31 +1,26 @@
 import React, { useState } from 'react';
-import { Calculator, ArrowRightLeft, GraduationCap, History, Dna } from 'lucide-react';
+import { Calculator, ArrowRightLeft, GraduationCap, History, Dna, MessageSquare, HelpCircle } from 'lucide-react';
 import { CGPAForm } from './components/CGPAForm';
 import { ScaleConverter } from './components/ScaleConverter';
 import { AcademicJourney } from './components/AcademicJourney';
 import { AcademicDNAProfiler } from './components/AcademicDNAProfiler';
+import { FeedbackForm } from './components/FeedbackForm';
+import { HelpDocs } from './components/HelpDocs';
 import { Tooltip } from './components/Tooltip';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'calculator' | 'converter' | 'journey' | 'dna'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'converter' | 'journey' | 'dna' | 'feedback' | 'help'>('calculator');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8">
-          <div className="inline-block p-3 bg-white/30 backdrop-blur-lg rounded-2xl mb-4">
-            <GraduationCap className="w-10 h-10 text-indigo-600" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            CGPA Calculator
-          </h1>
-          <p className="text-gray-600">Track your academic progress and achievements</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Modern CGPA Calculator</h1>
+          <p className="text-lg text-gray-600">Calculate, convert, and track your academic performance</p>
         </div>
 
-        {/* Tab Navigation */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
-          <Tooltip text="Calculate your CGPA with course grades and units. Get smart predictions for improvement.">
+          <Tooltip text="Calculate your CGPA with course grades and units">
             <button
               onClick={() => setActiveTab('calculator')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -39,7 +34,7 @@ export default function App() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Convert between different CGPA scales and understand equivalencies">
+          <Tooltip text="Convert between different CGPA scales">
             <button
               onClick={() => setActiveTab('converter')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -53,7 +48,7 @@ export default function App() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Track your academic progress over time and visualize your journey">
+          <Tooltip text="Track your academic progress">
             <button
               onClick={() => setActiveTab('journey')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -67,7 +62,7 @@ export default function App() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Discover your unique academic learning patterns and optimize your study approach.">
+          <Tooltip text="Discover your unique academic learning patterns">
             <button
               onClick={() => setActiveTab('dna')}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
@@ -80,17 +75,45 @@ export default function App() {
               <span>Academic DNA</span>
             </button>
           </Tooltip>
+
+          <Tooltip text="Share your feedback">
+            <button
+              onClick={() => setActiveTab('feedback')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                activeTab === 'feedback'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              } transition-all`}
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span>Feedback</span>
+            </button>
+          </Tooltip>
+
+          <Tooltip text="View help and documentation">
+            <button
+              onClick={() => setActiveTab('help')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                activeTab === 'help'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              } transition-all`}
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>Help</span>
+            </button>
+          </Tooltip>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl mb-8">
+        <div className="mb-8">
           {activeTab === 'calculator' && <CGPAForm />}
           {activeTab === 'converter' && <ScaleConverter />}
           {activeTab === 'journey' && <AcademicJourney />}
           {activeTab === 'dna' && <AcademicDNAProfiler />}
+          {activeTab === 'feedback' && <FeedbackForm />}
+          {activeTab === 'help' && <HelpDocs />}
         </div>
 
-        {/* Footer */}
         <footer className="text-center text-gray-600 text-sm py-4 mt-auto">
           <p>Designed and developed by{' '}
             <a 
