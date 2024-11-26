@@ -145,6 +145,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Project Link: [https://github.com/s-araromi/modern-cgpa-calculator](https://github.com/s-araromi/modern-cgpa-calculator)
 
+Access the App here: https://modern-cgpa-calculator.vercel.app
+
 ## 💡 Usage Tips
 
 ### CGPA Calculation
