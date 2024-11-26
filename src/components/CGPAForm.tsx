@@ -32,7 +32,13 @@ export function CGPAForm() {
       'E': 0.0,  // 40-44%
       'F': 0.0   // Below 40%
     },
-    '5.0': { 'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'F': 0 },
+    '5.0': {
+      'A': 5.0,  // 70% and above
+      'B': 4.0,  // 60-69%
+      'C': 3.0,  // 50-59%
+      'D': 2.0,  // 45-49%
+      'F': 0.0   // Below 45%
+    },
     '7.0': {
       'A': 7.0,   // 70-100%
       'B+': 6.0,  // 65-69%
@@ -53,6 +59,13 @@ export function CGPAForm() {
       'D': '45-49%',
       'E': '40-44%',
       'F': 'Below 40%'
+    },
+    '5.0': {
+      'A': '70% and above',
+      'B': '60-69%',
+      'C': '50-59%',
+      'D': '45-49%',
+      'F': 'Below 45%'
     },
     '7.0': {
       'A': '70-100%',
@@ -222,9 +235,9 @@ export function CGPAForm() {
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">Select</option>
+                <option value="">Select Grade</option>
                 {Object.entries(gradePoints[scale]).map(([grade, point]) => (
                   <option key={grade} value={grade}>
                     {grade} ({gradeRanges[scale][grade]})
