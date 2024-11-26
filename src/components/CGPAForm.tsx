@@ -229,9 +229,6 @@ export function CGPAForm() {
               className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <div className="w-32">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Grade
-              </label>
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
