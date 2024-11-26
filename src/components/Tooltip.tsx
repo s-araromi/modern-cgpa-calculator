@@ -5,7 +5,7 @@ interface TooltipProps {
   children: React.ReactNode;
 }
 
-export function Tooltip({ text, children }: TooltipProps) {
+const Tooltip = ({ text, children }: TooltipProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
@@ -22,3 +22,5 @@ export function Tooltip({ text, children }: TooltipProps) {
     </div>
   );
 }
+
+export default Tooltip;

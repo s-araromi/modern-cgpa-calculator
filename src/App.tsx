@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Calculator, ArrowRightLeft, GraduationCap, History, Dna, MessageSquare, HelpCircle } from 'lucide-react';
-import { CGPAForm } from './components/CGPAForm';
-import { ScaleConverter } from './components/ScaleConverter';
-import { AcademicJourney } from './components/AcademicJourney';
-import { AcademicDNAProfiler } from './components/AcademicDNAProfiler';
-import { FeedbackForm } from './components/FeedbackForm';
-import { HelpDocs } from './components/HelpDocs';
-import { Tooltip } from './components/Tooltip';
+import { Calculator, ArrowRightLeft, History, MessageSquare, HelpCircle } from 'lucide-react';
+import CGPAForm from './components/CGPAForm';
+import ScaleConverter from './components/ScaleConverter';
+import AcademicJourney from './components/AcademicJourney';
+import FeedbackForm from './components/FeedbackForm';
+import HelpDocs from './components/HelpDocs';
+import Tooltip from './components/Tooltip';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'calculator' | 'converter' | 'journey' | 'dna' | 'feedback' | 'help'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'converter' | 'journey' | 'feedback' | 'help'>('calculator');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 py-8">
@@ -62,20 +61,6 @@ export default function App() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Discover your unique academic learning patterns">
-            <button
-              onClick={() => setActiveTab('dna')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
-                activeTab === 'dna'
-                  ? 'bg-white shadow-lg text-indigo-600'
-                  : 'bg-white/50 hover:bg-white/70 text-gray-600'
-              }`}
-            >
-              <Dna className="w-5 h-5" />
-              <span>Academic DNA</span>
-            </button>
-          </Tooltip>
-
           <Tooltip text="Share your feedback">
             <button
               onClick={() => setActiveTab('feedback')}
@@ -109,7 +94,6 @@ export default function App() {
           {activeTab === 'calculator' && <CGPAForm />}
           {activeTab === 'converter' && <ScaleConverter />}
           {activeTab === 'journey' && <AcademicJourney />}
-          {activeTab === 'dna' && <AcademicDNAProfiler />}
           {activeTab === 'feedback' && <FeedbackForm />}
           {activeTab === 'help' && <HelpDocs />}
         </div>

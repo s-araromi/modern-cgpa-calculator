@@ -14,7 +14,7 @@ interface Prediction {
   targetAchievable: boolean;
 }
 
-export function CGPAForm() {
+const CGPAForm = () => {
   const [scale, setScale] = useState<'4.0' | '5.0' | '7.0'>('4.0');
   const [courses, setCourses] = useState<Course[]>([
     { id: '1', name: '', grade: '', credits: 3 },
@@ -337,4 +337,6 @@ export function CGPAForm() {
       </div>
     </div>
   );
-}
+};
+
+export default CGPAForm;

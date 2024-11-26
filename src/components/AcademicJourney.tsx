@@ -9,7 +9,7 @@ interface Semester {
   courses: number;
 }
 
-export function AcademicJourney() {
+const AcademicJourney = () => {
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [newSemester, setNewSemester] = useState({
     name: '',
@@ -159,4 +159,6 @@ export function AcademicJourney() {
       )}
     </div>
   );
-}
+};
+
+export default AcademicJourney;

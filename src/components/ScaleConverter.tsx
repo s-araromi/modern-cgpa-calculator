@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 
-export function ScaleConverter() {
+const ScaleConverter = () => {
   const [fromScale, setFromScale] = useState<'4.0' | '5.0' | '7.0'>('4.0');
   const [toScale, setToScale] = useState<'4.0' | '5.0' | '7.0'>('5.0');
   const [value, setValue] = useState<string>('');
@@ -79,3 +79,5 @@ export function ScaleConverter() {
     </div>
   );
 }
+
+export default ScaleConverter;
