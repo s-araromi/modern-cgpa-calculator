@@ -3,6 +3,7 @@ import { PlusCircle, Trash2, Sparkles, Target } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
 import ScenarioPlanner from './ScenarioPlanner';
+import ReportExporter from './ReportExporter';
 
 interface Course {
   id: string;
@@ -26,6 +27,7 @@ const CGPAForm = () => {
   const [targetCGPA, setTargetCGPA] = useState<string>('');
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [remainingUnits, setRemainingUnits] = useState<number>(0);
+  const [scenarios, setScenarios] = useState<any[]>([]);
 
   const gradePoints = {
     '4.0': {
@@ -402,6 +404,15 @@ const CGPAForm = () => {
               scale={scale}
               gradePoints={gradePoints}
               currentCGPA={cgpa}
+            />
+
+            {/* Report Exporter */}
+            <ReportExporter
+              courses={courses}
+              scale={scale}
+              currentCGPA={cgpa}
+              scenarios={scenarios}
+              gradePoints={gradePoints}
             />
           </div>
         )}
