@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PlusCircle, Trash2, Sparkles, Target } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
+import PerformanceTrends from './PerformanceTrends';
 
 interface Course {
   id: string;
@@ -380,6 +381,14 @@ const CGPAForm = () => {
             
             {/* Course Impact Analysis */}
             <CourseImpactAnalysis
+              courses={courses}
+              scale={scale}
+              gradePoints={gradePoints}
+              currentCGPA={cgpa}
+            />
+
+            {/* Performance Trends */}
+            <PerformanceTrends
               courses={courses}
               scale={scale}
               gradePoints={gradePoints}
