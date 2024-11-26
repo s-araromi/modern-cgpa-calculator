@@ -28,42 +28,42 @@ export default function App() {
           <Tooltip text="Calculate your CGPA with course grades and units. Get smart predictions for improvement.">
             <button
               onClick={() => setActiveTab('calculator')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                 activeTab === 'calculator'
-                  ? 'bg-white shadow-lg text-indigo-600'
-                  : 'bg-white/50 hover:bg-white/70 text-gray-600'
-              }`}
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              } transition-all`}
             >
               <Calculator className="w-5 h-5" />
-              <span>Calculator</span>
+              <span>CGPA Calculator</span>
             </button>
           </Tooltip>
 
-          <Tooltip text="Convert your CGPA between different scales easily and accurately.">
+          <Tooltip text="Convert between different CGPA scales and understand equivalencies">
             <button
               onClick={() => setActiveTab('converter')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                 activeTab === 'converter'
-                  ? 'bg-white shadow-lg text-indigo-600'
-                  : 'bg-white/50 hover:bg-white/70 text-gray-600'
-              }`}
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              } transition-all`}
             >
               <ArrowRightLeft className="w-5 h-5" />
-              <span>Converter</span>
+              <span>CGPA Converter</span>
             </button>
           </Tooltip>
 
-          <Tooltip text="Track your progress over semesters and celebrate your academic achievements.">
+          <Tooltip text="Track your academic progress over time and visualize your journey">
             <button
               onClick={() => setActiveTab('journey')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                 activeTab === 'journey'
-                  ? 'bg-white shadow-lg text-indigo-600'
-                  : 'bg-white/50 hover:bg-white/70 text-gray-600'
-              }`}
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              } transition-all`}
             >
               <History className="w-5 h-5" />
-              <span>Journey</span>
+              <span>Academic Journey</span>
             </button>
           </Tooltip>
 

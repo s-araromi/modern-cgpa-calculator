@@ -24,9 +24,46 @@ export function CGPAForm() {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
 
   const gradePoints = {
-    '4.0': { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0 },
-    '5.0': { 'A+': 5.0, 'A': 4.5, 'B': 4.0, 'C': 3.5, 'D': 3.0, 'E': 2.0, 'F': 0 },
-    '7.0': { 'O': 7.0, 'A+': 6.0, 'A': 5.0, 'B+': 4.0, 'B': 3.0, 'C': 2.0, 'F': 0 },
+    '4.0': {
+      'A': 4.0,  // 70% and above
+      'B': 3.0,  // 60-69%
+      'C': 2.0,  // 50-59%
+      'D': 1.0,  // 45-49%
+      'E': 0.0,  // 40-44%
+      'F': 0.0   // Below 40%
+    },
+    '5.0': { 'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'F': 0 },
+    '7.0': {
+      'A': 7.0,   // 70-100%
+      'B+': 6.0,  // 65-69%
+      'B': 5.0,   // 60-64%
+      'C+': 4.0,  // 55-59%
+      'C': 3.0,   // 50-54%
+      'D': 2.0,   // 45-49%
+      'E': 1.0,   // 40-44%
+      'F': 0.0    // Below 40%
+    }
+  };
+
+  const gradeRanges = {
+    '4.0': {
+      'A': '70% and above',
+      'B': '60-69%',
+      'C': '50-59%',
+      'D': '45-49%',
+      'E': '40-44%',
+      'F': 'Below 40%'
+    },
+    '7.0': {
+      'A': '70-100%',
+      'B+': '65-69%',
+      'B': '60-64%',
+      'C+': '55-59%',
+      'C': '50-54%',
+      'D': '45-49%',
+      'E': '40-44%',
+      'F': 'Below 40%'
+    }
   };
 
   // Course difficulty patterns (simplified AI simulation)
@@ -178,18 +215,23 @@ export function CGPAForm() {
               onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
               className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <select
-              value={course.grade}
-              onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">Select</option>
-              {Object.keys(gradePoints[scale]).map((grade) => (
-                <option key={grade} value={grade}>
-                  {grade}
-                </option>
-              ))}
-            </select>
+            <div className="w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Grade
+              </label>
+              <select
+                value={course.grade}
+                onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
+                className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Select</option>
+                {Object.entries(gradePoints[scale]).map(([grade, point]) => (
+                  <option key={grade} value={grade}>
+                    {grade} ({gradeRanges[scale][grade]})
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               type="number"
               min="0"
