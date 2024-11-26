@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlusCircle, Trash2, Sparkles, Target } from 'lucide-react';
+import CourseImpactAnalysis from './CourseImpactAnalysis';
 
 interface Course {
   id: string;
@@ -351,7 +352,7 @@ const CGPAForm = () => {
         <div className="flex gap-2">
           <button
             onClick={calculateCGPA}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             Calculate CGPA
           </button>
@@ -368,9 +369,22 @@ const CGPAForm = () => {
       {/* Results */}
       <div className="space-y-4">
         {cgpa !== null && (
-          <div className="p-4 bg-white rounded-lg shadow-lg text-center animate-fadeIn">
-            <h3 className="text-lg font-semibold text-gray-700">Current CGPA</h3>
-            <p className="text-3xl font-bold text-indigo-600">{cgpa}</p>
+          <div className="mt-6">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-800">Your CGPA</h3>
+              <div className="mt-2 text-4xl font-bold text-indigo-600">{cgpa.toFixed(2)}</div>
+              <p className="mt-2 text-gray-600">
+                Based on {courses.length} course{courses.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            
+            {/* Course Impact Analysis */}
+            <CourseImpactAnalysis
+              courses={courses}
+              scale={scale}
+              gradePoints={gradePoints}
+              currentCGPA={cgpa}
+            />
           </div>
         )}
 
