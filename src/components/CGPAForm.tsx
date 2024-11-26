@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Sparkles, Target } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
 import ScenarioPlanner from './ScenarioPlanner';
 import ReportExporter from './ReportExporter';
+import AchievementSystem from './AchievementSystem';
 
 interface Course {
   id: string;
@@ -20,10 +21,11 @@ interface Prediction {
 
 const CGPAForm = () => {
   const [scale, setScale] = useState<'4.0' | '5.0' | '7.0'>('4.0');
-  const [courses, setCourses] = useState<Course[]>([
-    { id: '1', name: '', grade: '', credits: 3 },
-  ]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [cgpa, setCGPA] = useState<number | null>(null);
+  const [previousCGPA, setPreviousCGPA] = useState<number | null>(null);
+  const [consecutiveImprovement, setConsecutiveImprovement] = useState<number>(0);
+  const [totalCredits, setTotalCredits] = useState<number>(0);
   const [targetCGPA, setTargetCGPA] = useState<string>('');
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [remainingUnits, setRemainingUnits] = useState<number>(0);
@@ -112,10 +114,12 @@ const CGPAForm = () => {
   };
 
   const calculateCGPA = () => {
+    if (courses.length === 0) return;
+
     let totalPoints = 0;
     let totalCredits = 0;
 
-    courses.forEach(course => {
+    courses.forEach((course) => {
       if (course.grade && course.credits) {
         const points = gradePoints[scale][course.grade as keyof typeof gradePoints['4.0']];
         totalPoints += points * course.credits;
@@ -124,9 +128,20 @@ const CGPAForm = () => {
     });
 
     if (totalCredits === 0) return;
-    const calculated = Number((totalPoints / totalCredits).toFixed(2));
-    setCGPA(calculated);
-    return calculated;
+    const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
+
+    // Update achievement tracking
+    if (cgpa !== null) {
+      setPreviousCGPA(cgpa);
+      if (newCGPA > cgpa) {
+        setConsecutiveImprovement(prev => prev + 1);
+      } else {
+        setConsecutiveImprovement(0);
+      }
+    }
+
+    setTotalCredits(totalCredits);
+    setCGPA(newCGPA);
   };
 
   const predictFutureCGPA = () => {
@@ -413,6 +428,16 @@ const CGPAForm = () => {
               currentCGPA={cgpa}
               scenarios={scenarios}
               gradePoints={gradePoints}
+            />
+
+            {/* Achievement System */}
+            <AchievementSystem
+              courses={courses}
+              currentCGPA={cgpa || 0}
+              scale={scale}
+              previousCGPA={previousCGPA || 0}
+              consecutiveImprovement={consecutiveImprovement}
+              totalCredits={totalCredits}
             />
           </div>
         )}
