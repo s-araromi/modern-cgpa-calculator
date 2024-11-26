@@ -83,7 +83,7 @@ export default function App() {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 md:p-8 transition-all">
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl mb-8">
           {activeTab === 'calculator' && <CGPAForm />}
           {activeTab === 'converter' && <ScaleConverter />}
           {activeTab === 'journey' && <AcademicJourney />}
@@ -91,8 +91,17 @@ export default function App() {
         </div>
 
         {/* Footer */}
-        <footer className="text-center mt-8 text-gray-600 text-sm">
-          <p>Built with modern web technologies for accurate CGPA calculations</p>
+        <footer className="text-center text-gray-600 text-sm py-4 mt-auto">
+          <p>Designed and developed by{' '}
+            <a 
+              href="https://github.com/s-araromi" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-300 hover:underline"
+            >
+              Sulaimon Araromi
+            </a>
+          </p>
         </footer>
       </div>
     </div>
