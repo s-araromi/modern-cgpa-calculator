@@ -183,16 +183,16 @@ const CGPAForm: FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">CGPA Calculator</h2>
+        <h2 className="text-2xl font-bold mb-4">Choose your Grading Scale</h2>
         <div className="flex gap-4 mb-4">
           <select
             value={scale}
             onChange={(e) => setScale(e.target.value as GradeScale)}
-            className="border rounded px-3 py-2"
+            className="border rounded px-3 py-2 w-full"
           >
-            <option value="4.0">4.0 Scale</option>
-            <option value="5.0">5.0 Scale</option>
-            <option value="7.0">7.0 Scale</option>
+            <option value="4.0">4.0 Scale (Standard US Scale)</option>
+            <option value="5.0">5.0 Scale (Nigerian Scale)</option>
+            <option value="7.0">7.0 Scale (Advanced Scale)</option>
           </select>
         </div>
 
@@ -208,25 +208,56 @@ const CGPAForm: FC = () => {
               </div>
             ))}
           </div>
+          
+          {/* Help and Documentation */}
+          <div className="mt-4 text-sm text-gray-600">
+            <h4 className="font-semibold mb-2">Understanding Grade Scales:</h4>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>4.0 Scale:</strong> Standard US grading system used by most universities. A = 4.0 (Excellent), F = 0.0 (Fail)</li>
+              <li><strong>5.0 Scale:</strong> Common in Nigerian universities. A = 5.0 (Excellent), F = 0.0 (Fail)</li>
+              <li><strong>7.0 Scale:</strong> Advanced scale with more grade points for finer differentiation. A = 7.0 (Excellent), F = 0.0 (Fail)</li>
+            </ul>
+            <h4 className="font-semibold mt-4 mb-2">How to Use:</h4>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>Select your institution's grading scale</li>
+              <li>Add your courses using the "Add Course" button</li>
+              <li>For each course:
+                <ul className="list-disc pl-5 mt-1">
+                  <li>Enter the course name</li>
+                  <li>Select your grade (includes percentage range)</li>
+                  <li>Enter course units/credits (typically 1-6)</li>
+                </ul>
+              </li>
+              <li>Click "Calculate CGPA" to see your results</li>
+            </ol>
+          </div>
         </div>
 
         {/* Course List */}
         <div className="space-y-4">
+          {/* Course Entry Labels */}
+          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-4 px-4">
+            <label className="text-sm font-medium text-gray-700">Select Course Name</label>
+            <label className="text-sm font-medium text-gray-700 w-48">Select Grade</label>
+            <label className="text-sm font-medium text-gray-700 w-32">Select Course Unit</label>
+            <div className="w-10"></div>
+          </div>
+          
           {courses.map((course) => (
             <div key={course.id} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow">
               <input
                 type="text"
                 value={course.name}
                 onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
-                placeholder="Course Name"
+                placeholder="Enter course name"
                 className="flex-1 border rounded px-3 py-2"
               />
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                className="border rounded px-3 py-2"
+                className="border rounded px-3 py-2 w-48"
               >
-                <option value="">Select Grade</option>
+                <option value="">Select your grade</option>
                 {getGradeOptions(scale).map(({ grade, range }) => (
                   <option key={grade} value={grade}>
                     {grade} ({range})
@@ -239,12 +270,13 @@ const CGPAForm: FC = () => {
                 onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
                 min="0"
                 max="6"
-                className="w-20 border rounded px-3 py-2"
-                placeholder="Units"
+                className="w-32 border rounded px-3 py-2"
+                placeholder="Enter units"
               />
               <button
                 onClick={() => removeCourse(course.id)}
                 className="p-2 text-red-600 hover:bg-red-50 rounded"
+                title="Remove course"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
