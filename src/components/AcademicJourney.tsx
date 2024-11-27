@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { PlusCircle, Trash2, Trophy, Star, TrendingUp, Award } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Trash2, Trophy, Star, TrendingUp, Award, Download, BarChart2 } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 
 interface Semester {
   id: string;
@@ -7,6 +8,11 @@ interface Semester {
   cgpa: number;
   achievements: string[];
   courses: number;
+  courseList: {
+    name: string;
+    grade: string;
+    units: number;
+  }[];
 }
 
 const AcademicJourney = () => {
@@ -16,7 +22,51 @@ const AcademicJourney = () => {
     cgpa: '',
     achievement: '',
     courses: '',
+    courseList: [],
   });
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
+  // Performance Analytics
+  const calculatePerformanceMetrics = () => {
+    if (semesters.length === 0) return null;
+
+    const averageCGPA = semesters.reduce((acc, sem) => acc + sem.cgpa, 0) / semesters.length;
+    const trend = semesters.length > 1 
+      ? semesters[semesters.length - 1].cgpa - semesters[semesters.length - 2].cgpa 
+      : 0;
+    const totalCourses = semesters.reduce((acc, sem) => acc + sem.courses, 0);
+
+    return {
+      averageCGPA: averageCGPA.toFixed(2),
+      trend: trend.toFixed(2),
+      totalCourses,
+      bestSemester: [...semesters].sort((a, b) => b.cgpa - a.cgpa)[0],
+      consistency: calculateConsistency(),
+    };
+  };
+
+  const calculateConsistency = () => {
+    if (semesters.length < 2) return 'N/A';
+    const cgpas = semesters.map(s => s.cgpa);
+    const variance = cgpas.reduce((acc, val) => acc + Math.pow(val - (cgpas.reduce((a, b) => a + b) / cgpas.length), 2), 0) / cgpas.length;
+    return variance < 0.25 ? 'High' : variance < 0.5 ? 'Medium' : 'Low';
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    const content = document.getElementById('academic-journey');
+    if (!content) return;
+
+    const opt = {
+      margin: 1,
+      filename: 'academic-journey.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(content).save();
+  };
 
   const addSemester = () => {
     if (!newSemester.name || !newSemester.cgpa) return;
@@ -29,10 +79,11 @@ const AcademicJourney = () => {
         cgpa: parseFloat(newSemester.cgpa),
         achievements: newSemester.achievement ? [newSemester.achievement] : [],
         courses: parseInt(newSemester.courses) || 0,
+        courseList: newSemester.courseList,
       },
     ]);
 
-    setNewSemester({ name: '', cgpa: '', achievement: '', courses: '' });
+    setNewSemester({ name: '', cgpa: '', achievement: '', courses: '', courseList: [] });
   };
 
   const removeSemester = (id: string) => {
@@ -54,7 +105,51 @@ const AcademicJourney = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="p-6" id="academic-journey">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Academic Journey</h2>
+        <div className="space-x-4">
+          <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center gap-2 hover:bg-blue-600"
+          >
+            <BarChart2 className="w-5 h-5" />
+            {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center gap-2 hover:bg-green-600"
+          >
+            <Download className="w-5 h-5" />
+            Export PDF
+          </button>
+        </div>
+      </div>
+
+      {showAnalytics && (
+        <div className="mb-8 bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-xl font-semibold mb-4">Performance Analytics</h3>
+          {calculatePerformanceMetrics() && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Average CGPA</p>
+                <p className="text-2xl font-bold text-blue-600">{calculatePerformanceMetrics()?.averageCGPA}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Current Trend</p>
+                <p className={`text-2xl font-bold ${Number(calculatePerformanceMetrics()?.trend) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Number(calculatePerformanceMetrics()?.trend) > 0 ? '+' : ''}{calculatePerformanceMetrics()?.trend}
+                </p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Consistency</p>
+                <p className="text-2xl font-bold text-purple-600">{calculatePerformanceMetrics()?.consistency}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Add Semester Form */}
       <div className="bg-white/50 p-6 rounded-xl space-y-4">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Add Semester</h3>
