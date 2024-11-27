@@ -14,8 +14,25 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Modern CGPA Calculator</h1>
-          <p className="text-lg text-gray-600">Calculate, convert, and track your academic performance</p>
+          {/* App Name with Gradient Text */}
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
+            GRADIENT
+          </h1>
+          
+          {/* Main Title */}
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Modern CGPA Calculator
+          </h2>
+          
+          {/* Tagline with Subtle Animation */}
+          <p className="text-lg text-gray-600 mb-2 animate-fade-in">
+            From Grades to Greatness...
+          </p>
+          
+          {/* Description */}
+          <p className="text-lg text-gray-600">
+            Calculate, convert, and track your academic performance
+          </p>
         </div>
 
         <div className="flex flex-wrap justify-center gap-4 mb-8">
