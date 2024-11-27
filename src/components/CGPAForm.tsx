@@ -112,18 +112,25 @@ const CGPAForm: FC = () => {
   };
 
   const calculateCGPA = () => {
-    if (courses.length === 0) return null;
+    if (courses.length === 0) {
+      alert('Please add at least one course');
+      return;
+    }
 
     let totalPoints = 0;
     let totalCredits = 0;
 
     const validCourses = courses.filter(course => 
+      course.name.trim() !== '' && 
       course.grade && 
-      course.credits && 
+      course.credits > 0 && 
       gradePoints[scale][course.grade] !== undefined
     );
 
-    if (validCourses.length === 0) return null;
+    if (validCourses.length === 0) {
+      alert('Please enter valid course details (name, grade, and credits) for at least one course');
+      return;
+    }
 
     validCourses.forEach((course) => {
       const points = gradePoints[scale][course.grade];
@@ -140,7 +147,6 @@ const CGPAForm: FC = () => {
 
     setTotalCredits(totalCredits);
     setCGPA(newCGPA);
-    return newCGPA;
   };
 
   const getGradeOptions = (scale: GradeScale) => {
@@ -294,7 +300,12 @@ const CGPAForm: FC = () => {
           </button>
           <button
             onClick={calculateCGPA}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            disabled={courses.length === 0}
+            className={`px-4 py-2 text-white rounded-lg ${
+              courses.length === 0 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
             Calculate CGPA
           </button>
