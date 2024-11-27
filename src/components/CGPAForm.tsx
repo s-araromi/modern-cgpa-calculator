@@ -116,8 +116,12 @@ const CGPAForm: FC = () => {
   };
 
   const calculateCGPA = () => {
+    console.log('Starting CGPA calculation...');
+    console.log('Current courses:', courses);
+    
     try {
       if (courses.length === 0) {
+        console.log('No courses found');
         setError('Please add at least one course');
         return;
       }
@@ -127,39 +131,53 @@ const CGPAForm: FC = () => {
 
       // Validate and calculate for each course
       for (const course of courses) {
-        if (!course.name.trim() || !course.grade || !course.credits) {
+        console.log('Processing course:', course);
+        
+        if (!course.name.trim() || !course.grade || course.credits <= 0) {
+          console.log('Invalid course data:', { name: course.name, grade: course.grade, credits: course.credits });
           setError('Please fill in all course details (name, grade, and credits)');
           return;
         }
 
         const points = gradePoints[scale][course.grade];
+        console.log('Grade points for', course.grade, ':', points);
+        
         if (points === undefined) {
+          console.log('Invalid grade points for:', course.grade);
           setError(`Invalid grade ${course.grade} for scale ${scale}`);
           return;
         }
 
-        totalPoints += points * course.credits;
+        const coursePoints = points * course.credits;
+        console.log('Course points:', coursePoints);
+        
+        totalPoints += coursePoints;
         totalCredits += course.credits;
       }
 
+      console.log('Total points:', totalPoints);
+      console.log('Total credits:', totalCredits);
+
       if (totalCredits === 0) {
+        console.log('Total credits is zero');
         setError('Total credits cannot be zero');
         return;
       }
 
       // Calculate and update CGPA
       const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
-      console.log('Calculation details:', {
-        courses,
-        totalPoints,
-        totalCredits,
-        newCGPA
-      });
+      console.log('Calculated CGPA:', newCGPA);
       
+      setError(null);
       setTotalCredits(totalCredits);
       setCGPA(newCGPA);
       setPreviousCGPA(cgpa);
-      setError(null);
+      
+      console.log('Updated state:', {
+        cgpa: newCGPA,
+        totalCredits,
+        error: null
+      });
     } catch (err) {
       console.error('Error calculating CGPA:', err);
       setError('An error occurred while calculating CGPA');
@@ -342,18 +360,33 @@ const CGPAForm: FC = () => {
             <h3 className="text-2xl font-bold text-gray-800 mb-4">Results</h3>
             <div className="space-y-4">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-semibold">Current CGPA:</span>
+                <span className="text-xl font-semibold">Your CGPA:</span>
                 <span className="text-3xl font-bold text-green-600">{cgpa.toFixed(2)}</span>
+                <span className="text-gray-500">on {scale} scale</span>
               </div>
               
               <div className="text-lg">
                 <span className="font-medium">Degree Classification:</span>
-                <span className="ml-2">{getDegreeClassification(cgpa, scale)}</span>
+                <span className="ml-2 text-indigo-600 font-semibold">{getDegreeClassification(cgpa, scale)}</span>
               </div>
 
               <div className="text-lg">
                 <span className="font-medium">Total Credits:</span>
                 <span className="ml-2">{totalCredits}</span>
+              </div>
+
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold mb-2">Course Summary:</h4>
+                <div className="space-y-2">
+                  {courses.map(course => (
+                    <div key={course.id} className="flex justify-between items-center">
+                      <span>{course.name}</span>
+                      <span className="text-gray-600">
+                        Grade: {course.grade} | Credits: {course.credits}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -373,6 +406,7 @@ const CGPAForm: FC = () => {
             scale={scale}
             consecutiveImprovement={consecutiveImprovement}
             totalCredits={totalCredits}
+            courses={courses}
           />
         </div>
       )}
