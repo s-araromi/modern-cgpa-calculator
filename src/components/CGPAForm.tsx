@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, type FC, useEffect, useCallback, useMemo } from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
@@ -22,6 +22,11 @@ const CGPAForm: FC = () => {
   const [previousCGPA, setPreviousCGPA] = useState<number | null>(null);
   const [consecutiveImprovement, setConsecutiveImprovement] = useState<number>(0);
   const [totalCredits, setTotalCredits] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+  }, [courses]);
 
   const gradePoints: GradePoints = {
     '4.0': {
@@ -52,7 +57,6 @@ const CGPAForm: FC = () => {
     }
   };
 
-  // Degree classification ranges
   const degreeClassification: Record<GradeScale, { min: number; max: number; class: string }[]> = {
     '4.0': [
       { min: 3.5, max: 4.0, class: 'First Class Honours' },
@@ -111,43 +115,59 @@ const CGPAForm: FC = () => {
     }));
   };
 
-  const calculateCGPA = () => {
-    if (courses.length === 0) {
-      alert('Please add at least one course');
-      return;
+  const calculateCGPA = useCallback(() => {
+    try {
+      console.log('Starting CGPA calculation');
+      console.log('Current courses:', courses);
+      setError(null);
+
+      if (courses.length === 0) {
+        setError('Please add at least one course');
+        return;
+      }
+
+      let totalPoints = 0;
+      let totalCredits = 0;
+
+      const validCourses = courses.filter(course => 
+        course.name.trim() !== '' && 
+        course.grade && 
+        course.credits > 0 && 
+        gradePoints[scale][course.grade] !== undefined
+      );
+
+      console.log('Valid courses:', validCourses);
+
+      if (validCourses.length === 0) {
+        setError('Please enter valid course details (name, grade, and credits) for at least one course');
+        return;
+      }
+
+      validCourses.forEach((course) => {
+        const points = gradePoints[scale][course.grade];
+        console.log(`Course: ${course.name}, Grade: ${course.grade}, Points: ${points}, Credits: ${course.credits}`);
+        totalPoints += points * course.credits;
+        totalCredits += course.credits;
+      });
+
+      console.log('Total points:', totalPoints);
+      console.log('Total credits:', totalCredits);
+
+      const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
+      console.log('Calculated CGPA:', newCGPA);
+      
+      if (cgpa !== null) {
+        setPreviousCGPA(cgpa);
+        setConsecutiveImprovement(newCGPA > cgpa ? prev => prev + 1 : 0);
+      }
+
+      setTotalCredits(totalCredits);
+      setCGPA(newCGPA);
+    } catch (err) {
+      console.error('Error calculating CGPA:', err);
+      setError('An error occurred while calculating CGPA');
     }
-
-    let totalPoints = 0;
-    let totalCredits = 0;
-
-    const validCourses = courses.filter(course => 
-      course.name.trim() !== '' && 
-      course.grade && 
-      course.credits > 0 && 
-      gradePoints[scale][course.grade] !== undefined
-    );
-
-    if (validCourses.length === 0) {
-      alert('Please enter valid course details (name, grade, and credits) for at least one course');
-      return;
-    }
-
-    validCourses.forEach((course) => {
-      const points = gradePoints[scale][course.grade];
-      totalPoints += points * course.credits;
-      totalCredits += course.credits;
-    });
-
-    const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
-    
-    if (cgpa !== null) {
-      setPreviousCGPA(cgpa);
-      setConsecutiveImprovement(newCGPA > cgpa ? prev => prev + 1 : 0);
-    }
-
-    setTotalCredits(totalCredits);
-    setCGPA(newCGPA);
-  };
+  }, [courses, scale, cgpa, gradePoints]);
 
   const getGradeOptions = (scale: GradeScale) => {
     const ranges = {
@@ -239,6 +259,13 @@ const CGPAForm: FC = () => {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Course List */}
         <div className="space-y-4">
           {/* Course Entry Labels */}
@@ -313,17 +340,17 @@ const CGPAForm: FC = () => {
       </div>
 
       {/* Display CGPA and Classification */}
-      {cgpa !== null && (
+      {cgpa !== null && !error && (
         <div className="mb-8 p-4 bg-white rounded-lg shadow">
           <div className="text-xl font-semibold mb-2">
-            Current CGPA: {cgpa.toFixed(2)}
+            Current CGPA: {cgpa?.toFixed(2)}
           </div>
           <div className="text-lg">
             Degree Classification: {getDegreeClassification(cgpa, scale)}
           </div>
           {previousCGPA !== null && (
             <div className="mt-2 text-sm">
-              Previous CGPA: {previousCGPA.toFixed(2)}
+              Previous CGPA: {previousCGPA?.toFixed(2)}
               <span className="ml-2">
                 {cgpa > previousCGPA ? (
                   <span className="text-green-600">↑ Improved</span>
@@ -335,11 +362,14 @@ const CGPAForm: FC = () => {
               </span>
             </div>
           )}
+          <div className="mt-2 text-sm text-gray-600">
+            Total Credits: {totalCredits}
+          </div>
         </div>
       )}
 
       {/* Analytics Section */}
-      {cgpa !== null && (
+      {cgpa !== null && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CourseImpactAnalysis
             courses={courses}
