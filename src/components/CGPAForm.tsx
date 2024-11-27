@@ -125,32 +125,41 @@ const CGPAForm: FC = () => {
       let totalPoints = 0;
       let totalCredits = 0;
 
-      const validCourses = courses.filter(course => 
-        course.name.trim() !== '' && 
-        course.grade && 
-        course.credits > 0 && 
-        gradePoints[scale][course.grade] !== undefined
-      );
+      // Validate and calculate for each course
+      for (const course of courses) {
+        if (!course.name.trim() || !course.grade || !course.credits) {
+          setError('Please fill in all course details (name, grade, and credits)');
+          return;
+        }
 
-      if (validCourses.length === 0) {
-        setError('Please enter valid course details (name, grade, and credits) for at least one course');
+        const points = gradePoints[scale][course.grade];
+        if (points === undefined) {
+          setError(`Invalid grade ${course.grade} for scale ${scale}`);
+          return;
+        }
+
+        totalPoints += points * course.credits;
+        totalCredits += course.credits;
+      }
+
+      if (totalCredits === 0) {
+        setError('Total credits cannot be zero');
         return;
       }
 
-      validCourses.forEach((course) => {
-        const points = gradePoints[scale][course.grade];
-        totalPoints += points * course.credits;
-        totalCredits += course.credits;
-      });
-
+      // Calculate and update CGPA
       const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
+      console.log('Calculation details:', {
+        courses,
+        totalPoints,
+        totalCredits,
+        newCGPA
+      });
       
       setTotalCredits(totalCredits);
       setCGPA(newCGPA);
       setPreviousCGPA(cgpa);
-      if (cgpa !== null) {
-        setConsecutiveImprovement(newCGPA > cgpa ? consecutiveImprovement + 1 : 0);
-      }
+      setError(null);
     } catch (err) {
       console.error('Error calculating CGPA:', err);
       setError('An error occurred while calculating CGPA');
@@ -315,60 +324,41 @@ const CGPAForm: FC = () => {
           </button>
           <button
             onClick={calculateCGPA}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            disabled={courses.length === 0}
           >
             Calculate CGPA
           </button>
         </div>
-      </div>
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
-        </div>
-      )}
-
-      {cgpa !== null && (
-        <div className="mt-8 p-6 bg-white rounded-lg shadow-lg">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Results</h3>
-          <div className="space-y-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-semibold">Current CGPA:</span>
-              <span className="text-3xl font-bold text-green-600">{cgpa.toFixed(2)}</span>
-            </div>
-            
-            <div className="text-lg">
-              <span className="font-medium">Degree Classification:</span>
-              <span className="ml-2">{getDegreeClassification(cgpa, scale)}</span>
-            </div>
-
-            <div className="text-lg">
-              <span className="font-medium">Total Credits:</span>
-              <span className="ml-2">{totalCredits}</span>
-            </div>
-
-            {previousCGPA !== null && (
-              <div className="flex items-center gap-2 text-lg">
-                <span className="font-medium">Previous CGPA:</span>
-                <span>{previousCGPA.toFixed(2)}</span>
-                <span className={`ml-2 px-2 py-1 rounded ${
-                  cgpa > previousCGPA 
-                    ? 'bg-green-100 text-green-700'
-                    : cgpa < previousCGPA
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {cgpa > previousCGPA 
-                    ? '↑ Improved'
-                    : cgpa < previousCGPA
-                    ? '↓ Decreased'
-                    : '→ Maintained'}
-                </span>
-              </div>
-            )}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
           </div>
-        </div>
-      )}
+        )}
+
+        {cgpa !== null && !error && (
+          <div className="mt-8 p-6 bg-white rounded-lg shadow-lg">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Results</h3>
+            <div className="space-y-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-semibold">Current CGPA:</span>
+                <span className="text-3xl font-bold text-green-600">{cgpa.toFixed(2)}</span>
+              </div>
+              
+              <div className="text-lg">
+                <span className="font-medium">Degree Classification:</span>
+                <span className="ml-2">{getDegreeClassification(cgpa, scale)}</span>
+              </div>
+
+              <div className="text-lg">
+                <span className="font-medium">Total Credits:</span>
+                <span className="ml-2">{totalCredits}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {cgpa !== null && (
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
