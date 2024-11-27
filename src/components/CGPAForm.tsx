@@ -40,7 +40,7 @@ const CGPAForm: FC = () => {
 
   const gradePoints: GradePoints = {
     '4.0': {
-      'A': 4.0,  // 70% and above
+      'A': 4.0,  // 70-100%
       'B': 3.0,  // 60-69%
       'C': 2.0,  // 50-59%
       'D': 1.0,  // 45-49%
@@ -48,11 +48,12 @@ const CGPAForm: FC = () => {
       'F': 0.0   // Below 40%
     },
     '5.0': {
-      'A': 5.0,  // 70% and above
+      'A': 5.0,  // 70-100%
       'B': 4.0,  // 60-69%
       'C': 3.0,  // 50-59%
       'D': 2.0,  // 45-49%
-      'F': 0.0   // Below 45%
+      'E': 1.0,  // 40-44%
+      'F': 0.0   // 0-39%
     },
     '7.0': {
       'A': 7.0,   // 70-100%
@@ -68,31 +69,69 @@ const CGPAForm: FC = () => {
 
   const gradeRangeMap: Record<GradeScale, GradeRange[]> = {
     '4.0': [
-      { min: 3.5, grade: 'A' },
-      { min: 2.5, grade: 'B' },
-      { min: 1.5, grade: 'C' },
-      { min: 0.5, grade: 'D' },
-      { min: 0, grade: 'F' }
+      { min: 70, grade: 'A' },  // 70-100%
+      { min: 60, grade: 'B' },  // 60-69%
+      { min: 50, grade: 'C' },  // 50-59%
+      { min: 45, grade: 'D' },  // 45-49%
+      { min: 40, grade: 'E' },  // 40-44%
+      { min: 0, grade: 'F' }    // 0-39%
     ],
     '5.0': [
-      { min: 4.5, grade: 'A' },
-      { min: 3.5, grade: 'B' },
-      { min: 2.5, grade: 'C' },
-      { min: 1.5, grade: 'D' },
-      { min: 0, grade: 'F' }
+      { min: 70, grade: 'A' },  // 70-100%
+      { min: 60, grade: 'B' },  // 60-69%
+      { min: 50, grade: 'C' },  // 50-59%
+      { min: 45, grade: 'D' },  // 45-49%
+      { min: 40, grade: 'E' },  // 40-44%
+      { min: 0, grade: 'F' }    // 0-39%
     ],
     '7.0': [
-      { min: 6.0, grade: 'A' },
-      { min: 5.0, grade: 'B+' },
-      { min: 4.0, grade: 'B' },
-      { min: 3.0, grade: 'C+' },
-      { min: 2.0, grade: 'C' },
-      { min: 1.0, grade: 'D' },
-      { min: 0, grade: 'F' }
+      { min: 70, grade: 'A' },   // 70-100%
+      { min: 65, grade: 'B+' },  // 65-69%
+      { min: 60, grade: 'B' },   // 60-64%
+      { min: 55, grade: 'C+' },  // 55-59%
+      { min: 50, grade: 'C' },   // 50-54%
+      { min: 45, grade: 'D' },   // 45-49%
+      { min: 40, grade: 'E' },   // 40-44%
+      { min: 0, grade: 'F' }     // 0-39%
     ]
   };
 
-  // Course difficulty patterns (simplified AI simulation)
+  // Degree classification ranges
+  const degreeClassification: Record<GradeScale, { min: number; max: number; class: string }[]> = {
+    '4.0': [
+      { min: 3.5, max: 4.0, class: 'First Class Honours' },
+      { min: 3.0, max: 3.49, class: 'Second Class Honours (Upper Division)' },
+      { min: 2.0, max: 2.99, class: 'Second Class Honours (Lower Division)' },
+      { min: 1.0, max: 1.99, class: 'Third Class Honours' },
+      { min: 0, max: 0.99, class: 'Fail' }
+    ],
+    '5.0': [
+      { min: 4.5, max: 5.0, class: 'First Class' },
+      { min: 3.5, max: 4.49, class: 'Second Class Upper' },
+      { min: 2.5, max: 3.49, class: 'Second Class Lower' },
+      { min: 1.5, max: 2.49, class: 'Third Class' },
+      { min: 1.0, max: 1.49, class: 'Pass' },
+      { min: 0, max: 0.99, class: 'Fail' }
+    ],
+    '7.0': [
+      { min: 6.0, max: 7.0, class: 'First Class Honours' },
+      { min: 5.0, max: 5.99, class: 'Second Class Honours (Upper Division)' },
+      { min: 4.0, max: 4.99, class: 'Second Class Honours (Lower Division)' },
+      { min: 3.0, max: 3.99, class: 'Third Class Honours' },
+      { min: 0, max: 2.99, class: 'Fail' }
+    ]
+  };
+
+  const getDegreeClassification = (cgpa: number | null, scale: GradeScale): string => {
+    if (cgpa === null) return 'Not Available';
+    
+    const classification = degreeClassification[scale].find(
+      (cls) => cgpa >= cls.min && cgpa <= cls.max
+    );
+    
+    return classification ? classification.class : 'Not Available';
+  };
+
   const courseDifficulty = {
     'calculus': 0.8,
     'physics': 0.75,
@@ -579,6 +618,32 @@ const CGPAForm: FC = () => {
                   </p>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Display CGPA and Classification */}
+      {cgpa !== null && (
+        <div className="mb-8 p-4 bg-white rounded-lg shadow">
+          <div className="text-xl font-semibold mb-2">
+            Current CGPA: {cgpa.toFixed(2)}
+          </div>
+          <div className="text-lg">
+            Degree Classification: {getDegreeClassification(cgpa, scale)}
+          </div>
+          {previousCGPA !== null && (
+            <div className="mt-2 text-sm">
+              Previous CGPA: {previousCGPA.toFixed(2)}
+              <span className="ml-2">
+                {cgpa > previousCGPA ? (
+                  <span className="text-green-600">↑ Improved</span>
+                ) : cgpa < previousCGPA ? (
+                  <span className="text-red-600">↓ Decreased</span>
+                ) : (
+                  <span className="text-gray-600">→ Maintained</span>
+                )}
+              </span>
             </div>
           )}
         </div>
