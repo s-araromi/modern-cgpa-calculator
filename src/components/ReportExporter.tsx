@@ -1,9 +1,8 @@
-import React, { useRef } from 'react';
-import { Download, FileSpreadsheet, FilePdf } from 'lucide-react';
-import jsPDF from 'jspdf';
+import { useState } from 'react';
+import { FileDown, FileSpreadsheet } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import html2canvas from 'html2canvas';
 
 interface Course {
   id: string;
@@ -12,176 +11,123 @@ interface Course {
   credits: number;
 }
 
-interface Scenario {
-  id: string;
-  name: string;
-  courses: Course[];
-  resultingCGPA: number;
-  improvement: number;
-}
+type GradeScale = '4.0' | '5.0' | '7.0';
+type GradePoints = Record<GradeScale, Record<string, number>>;
 
 interface ReportExporterProps {
   courses: Course[];
-  scale: '4.0' | '5.0' | '7.0';
-  currentCGPA: number;
-  scenarios?: Scenario[];
-  gradePoints: Record<string, Record<string, number>>;
+  scale: GradeScale;
+  currentCGPA: number | null;
+  gradePoints: GradePoints;
 }
 
 const ReportExporter: React.FC<ReportExporterProps> = ({
   courses,
   scale,
   currentCGPA,
-  scenarios = [],
   gradePoints,
 }) => {
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const generatePDF = async () => {
-    const pdf = new jsPDF();
-    const currentDate = new Date().toLocaleDateString();
-
-    // Add header
-    pdf.setFontSize(20);
-    pdf.text('CGPA Report', 105, 15, { align: 'center' });
-    pdf.setFontSize(10);
-    pdf.text(`Generated on ${currentDate}`, 105, 22, { align: 'center' });
-    pdf.text(`Scale: ${scale}`, 105, 27, { align: 'center' });
-
-    // Current CGPA
-    pdf.setFontSize(16);
-    pdf.text('Current CGPA', 20, 40);
-    pdf.setFontSize(14);
-    pdf.text(currentCGPA.toFixed(2), 20, 48);
-
-    // Course List
-    pdf.setFontSize(16);
-    pdf.text('Course Details', 20, 65);
-    
-    const courseData = courses.map(course => [
-      course.name || 'Unnamed Course',
-      course.grade,
-      course.credits.toString(),
-      gradePoints[scale][course.grade]?.toString() || '0'
-    ]);
-
-    (pdf as any).autoTable({
-      startY: 70,
-      head: [['Course Name', 'Grade', 'Credits', 'Grade Points']],
-      body: courseData,
-      theme: 'grid',
-      headStyles: { fillColor: [79, 70, 229] }
-    });
-
-    // Scenarios if available
-    if (scenarios.length > 0) {
-      const finalY = (pdf as any).lastAutoTable.finalY || 70;
-      pdf.setFontSize(16);
-      pdf.text('Future Scenarios', 20, finalY + 20);
-
-      const scenarioData = scenarios.map(scenario => [
-        scenario.name,
-        scenario.courses.length.toString(),
-        scenario.resultingCGPA.toFixed(2),
-        (scenario.improvement >= 0 ? '+' : '') + scenario.improvement.toFixed(2)
+  const exportToPDF = async () => {
+    setIsExporting(true);
+    try {
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.text('Academic Performance Report', 20, 20);
+      
+      // CGPA Summary
+      doc.setFontSize(16);
+      doc.text(`Current CGPA: ${currentCGPA?.toFixed(2) || 'N/A'}`, 20, 40);
+      doc.text(`Grading Scale: ${scale}`, 20, 50);
+      
+      // Course Table
+      doc.setFontSize(12);
+      const tableData = courses.map(course => [
+        course.name,
+        course.grade,
+        course.credits.toString(),
+        (gradePoints[scale][course.grade] * course.credits).toFixed(2)
       ]);
-
-      (pdf as any).autoTable({
-        startY: finalY + 25,
-        head: [['Scenario', 'Courses', 'Projected CGPA', 'Change']],
-        body: scenarioData,
-        theme: 'grid',
-        headStyles: { fillColor: [79, 70, 229] }
+      
+      doc.autoTable({
+        head: [['Course', 'Grade', 'Credits', 'Points']],
+        body: tableData,
+        startY: 70,
       });
+      
+      // Save the PDF
+      doc.save('academic-report.pdf');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
-
-    // Save the PDF
-    pdf.save('cgpa-report.pdf');
   };
 
-  const generateExcel = () => {
-    const wb = XLSX.utils.book_new();
-
-    // Current Courses Sheet
-    const courseData = courses.map(course => ({
-      'Course Name': course.name || 'Unnamed Course',
-      'Grade': course.grade,
-      'Credits': course.credits,
-      'Grade Points': gradePoints[scale][course.grade] || 0,
-      'Quality Points': (gradePoints[scale][course.grade] || 0) * course.credits
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(courseData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Current Courses');
-
-    // Summary Sheet
-    const summaryData = [
-      { 'Metric': 'Current CGPA', 'Value': currentCGPA.toFixed(2) },
-      { 'Metric': 'Total Courses', 'Value': courses.length },
-      { 'Metric': 'Total Credits', 'Value': courses.reduce((sum, course) => sum + course.credits, 0) },
-      { 'Metric': 'Scale', 'Value': scale }
-    ];
-
-    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-
-    // Scenarios Sheet (if available)
-    if (scenarios.length > 0) {
-      const scenarioData = scenarios.map(scenario => ({
-        'Scenario Name': scenario.name,
-        'Number of Courses': scenario.courses.length,
-        'Projected CGPA': scenario.resultingCGPA.toFixed(2),
-        'CGPA Change': (scenario.improvement >= 0 ? '+' : '') + scenario.improvement.toFixed(2)
+  const exportToExcel = () => {
+    setIsExporting(true);
+    try {
+      const workbook = XLSX.utils.book_new();
+      
+      // Course data
+      const courseData = courses.map(course => ({
+        'Course Name': course.name,
+        'Grade': course.grade,
+        'Credits': course.credits,
+        'Grade Points': gradePoints[scale][course.grade],
+        'Total Points': gradePoints[scale][course.grade] * course.credits
       }));
-
-      const scenarioWs = XLSX.utils.json_to_sheet(scenarioData);
-      XLSX.utils.book_append_sheet(wb, scenarioWs, 'Scenarios');
+      
+      const courseSheet = XLSX.utils.json_to_sheet(courseData);
+      XLSX.utils.book_append_sheet(workbook, courseSheet, 'Courses');
+      
+      // Summary data
+      const summaryData = [
+        { 'Metric': 'Current CGPA', 'Value': currentCGPA?.toFixed(2) || 'N/A' },
+        { 'Metric': 'Grading Scale', 'Value': scale },
+        { 'Metric': 'Total Courses', 'Value': courses.length },
+        { 'Metric': 'Total Credits', 'Value': courses.reduce((sum, c) => sum + c.credits, 0) }
+      ];
+      
+      const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+      
+      // Save the file
+      XLSX.writeFile(workbook, 'academic-report.xlsx');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export Excel file. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
-
-    // Save the Excel file
-    XLSX.writeFile(wb, 'cgpa-report.xlsx');
   };
 
   return (
-    <div className="mt-8 p-6 bg-white/50 backdrop-blur-md rounded-xl shadow-lg">
+    <div className="mt-8 p-6 bg-white rounded-xl shadow-lg">
       <h3 className="text-xl font-semibold text-gray-800 mb-4">Export Report</h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <div className="flex gap-4">
         <button
-          onClick={generatePDF}
-          className="flex items-center justify-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+          onClick={exportToPDF}
+          disabled={isExporting || !courses.length}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FilePdf className="w-5 h-5 text-red-600" />
-          <span className="text-red-700 font-medium">Export as PDF</span>
+          <FileDown className="w-5 h-5" />
+          Export PDF
         </button>
-
+        
         <button
-          onClick={generateExcel}
-          className="flex items-center justify-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+          onClick={exportToExcel}
+          disabled={isExporting || !courses.length}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FileSpreadsheet className="w-5 h-5 text-green-600" />
-          <span className="text-green-700 font-medium">Export as Excel</span>
+          <FileSpreadsheet className="w-5 h-5" />
+          Export Excel
         </button>
-      </div>
-
-      <div className="mt-6 p-4 bg-indigo-50 rounded-lg">
-        <h4 className="font-semibold text-gray-800 mb-2">About Reports</h4>
-        <ul className="space-y-2 text-sm text-gray-600">
-          <li>• PDF reports include detailed course information and visualizations</li>
-          <li>• Excel reports provide raw data for further analysis</li>
-          <li>• Both formats include current CGPA and future scenarios</li>
-          <li>• Use these reports for academic planning and record-keeping</li>
-        </ul>
-      </div>
-
-      {/* Hidden report template for PDF generation */}
-      <div ref={reportRef} className="hidden">
-        <div id="report-content">
-          <h1>CGPA Report</h1>
-          <p>Scale: {scale}</p>
-          <p>Current CGPA: {currentCGPA.toFixed(2)}</p>
-          {/* Add more content as needed */}
-        </div>
       </div>
     </div>
   );

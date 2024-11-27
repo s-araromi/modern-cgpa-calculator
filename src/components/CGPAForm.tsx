@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, Trash2, Sparkles, Target } from 'lucide-react';
+import { useState, useEffect, type FC } from 'react';
+import { Trash2, Target, PlusCircle, Sparkles } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
 import ScenarioPlanner from './ScenarioPlanner';
@@ -19,8 +19,16 @@ interface Prediction {
   targetAchievable: boolean;
 }
 
-const CGPAForm = () => {
-  const [scale, setScale] = useState<'4.0' | '5.0' | '7.0'>('4.0');
+type GradeScale = '4.0' | '5.0' | '7.0';
+type GradePoints = Record<GradeScale, Record<string, number>>;
+
+interface GradeRange {
+  min: number;
+  grade: string;
+}
+
+const CGPAForm: FC = () => {
+  const [scale, setScale] = useState<GradeScale>('4.0');
   const [courses, setCourses] = useState<Course[]>([]);
   const [cgpa, setCGPA] = useState<number | null>(null);
   const [previousCGPA, setPreviousCGPA] = useState<number | null>(null);
@@ -29,9 +37,8 @@ const CGPAForm = () => {
   const [targetCGPA, setTargetCGPA] = useState<string>('');
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [remainingUnits, setRemainingUnits] = useState<number>(0);
-  const [scenarios, setScenarios] = useState<any[]>([]);
 
-  const gradePoints = {
+  const gradePoints: GradePoints = {
     '4.0': {
       'A': 4.0,  // 70% and above
       'B': 3.0,  // 60-69%
@@ -59,32 +66,30 @@ const CGPAForm = () => {
     }
   };
 
-  const gradeRanges = {
-    '4.0': {
-      'A': '70% and above',
-      'B': '60-69%',
-      'C': '50-59%',
-      'D': '45-49%',
-      'E': '40-44%',
-      'F': 'Below 40%'
-    },
-    '5.0': {
-      'A': '70% and above',
-      'B': '60-69%',
-      'C': '50-59%',
-      'D': '45-49%',
-      'F': 'Below 45%'
-    },
-    '7.0': {
-      'A': '70-100%',
-      'B+': '65-69%',
-      'B': '60-64%',
-      'C+': '55-59%',
-      'C': '50-54%',
-      'D': '45-49%',
-      'E': '40-44%',
-      'F': 'Below 40%'
-    }
+  const gradeRangeMap: Record<GradeScale, GradeRange[]> = {
+    '4.0': [
+      { min: 3.5, grade: 'A' },
+      { min: 2.5, grade: 'B' },
+      { min: 1.5, grade: 'C' },
+      { min: 0.5, grade: 'D' },
+      { min: 0, grade: 'F' }
+    ],
+    '5.0': [
+      { min: 4.5, grade: 'A' },
+      { min: 3.5, grade: 'B' },
+      { min: 2.5, grade: 'C' },
+      { min: 1.5, grade: 'D' },
+      { min: 0, grade: 'F' }
+    ],
+    '7.0': [
+      { min: 6.0, grade: 'A' },
+      { min: 5.0, grade: 'B+' },
+      { min: 4.0, grade: 'B' },
+      { min: 3.0, grade: 'C+' },
+      { min: 2.0, grade: 'C' },
+      { min: 1.0, grade: 'D' },
+      { min: 0, grade: 'F' }
+    ]
   };
 
   // Course difficulty patterns (simplified AI simulation)
@@ -99,6 +104,12 @@ const CGPAForm = () => {
     'economics': 0.65,
   };
 
+  useEffect(() => {
+    if (cgpa !== null && targetCGPA) {
+      predictFutureCGPA();
+    }
+  }, [cgpa, targetCGPA, courses, scale, gradePoints]);
+
   const addCourse = () => {
     setCourses([...courses, { id: Date.now().toString(), name: '', grade: '', credits: 3 }]);
   };
@@ -108,94 +119,118 @@ const CGPAForm = () => {
   };
 
   const updateCourse = (id: string, field: keyof Course, value: string | number) => {
-    setCourses(courses.map(course => 
-      course.id === id ? { ...course, [field]: value } : course
-    ));
+    setCourses(courses.map(course => {
+      if (course.id === id) {
+        if (field === 'credits') {
+          const numValue = Number(value);
+          if (numValue < 0) return course;
+          if (numValue > 6) return { ...course, credits: 6 };
+          return { ...course, credits: numValue };
+        }
+        return { ...course, [field]: value };
+      }
+      return course;
+    }));
   };
 
   const calculateCGPA = () => {
-    if (courses.length === 0) return;
+    if (courses.length === 0) return null;
 
     let totalPoints = 0;
     let totalCredits = 0;
 
-    courses.forEach((course) => {
-      if (course.grade && course.credits) {
-        const points = gradePoints[scale][course.grade as keyof typeof gradePoints['4.0']];
-        totalPoints += points * course.credits;
-        totalCredits += course.credits;
-      }
+    const validCourses = courses.filter(course => 
+      course.grade && 
+      course.credits && 
+      gradePoints[scale][course.grade] !== undefined
+    );
+
+    if (validCourses.length === 0) return null;
+
+    validCourses.forEach((course) => {
+      const points = gradePoints[scale][course.grade];
+      totalPoints += points * course.credits;
+      totalCredits += course.credits;
     });
 
-    if (totalCredits === 0) return;
     const newCGPA = Number((totalPoints / totalCredits).toFixed(2));
-
-    // Update achievement tracking
+    
     if (cgpa !== null) {
       setPreviousCGPA(cgpa);
-      if (newCGPA > cgpa) {
-        setConsecutiveImprovement(prev => prev + 1);
-      } else {
-        setConsecutiveImprovement(0);
-      }
+      setConsecutiveImprovement(newCGPA > cgpa ? prev => prev + 1 : 0);
     }
 
     setTotalCredits(totalCredits);
     setCGPA(newCGPA);
+    return newCGPA;
   };
 
   const predictFutureCGPA = () => {
     const currentCGPA = calculateCGPA();
-    if (!currentCGPA || !targetCGPA) return;
-
-    const target = parseFloat(targetCGPA);
-    const coursePatterns = courses.map(course => {
-      const lowercaseName = course.name.toLowerCase();
-      let difficulty = 0.7; // default difficulty
-      
-      // Find matching difficulty patterns
-      Object.entries(courseDifficulty).forEach(([key, value]) => {
-        if (lowercaseName.includes(key)) {
-          difficulty = value;
-        }
-      });
-      
-      return {
-        name: course.name,
-        difficulty,
-        grade: course.grade,
-      };
-    });
-
-    // Predict based on current performance and course patterns
-    const averagePerformance = coursePatterns.reduce((acc, course) => {
-      if (course.grade) {
-        const gradeValue = gradePoints[scale][course.grade as keyof typeof gradePoints['4.0']];
-        return acc + (gradeValue / parseFloat(scale) * course.difficulty);
-      }
-      return acc;
-    }, 0) / coursePatterns.filter(c => c.grade).length;
-
-    const predictedCGPA = Number((currentCGPA * 0.7 + averagePerformance * 0.3).toFixed(2));
-    const targetAchievable = predictedCGPA >= target - 0.5;
-
-    // Generate smart recommendations
-    const recommendations = [];
-    if (predictedCGPA < target) {
-      if (coursePatterns.some(c => c.difficulty > 0.7)) {
-        recommendations.push("Consider balancing difficult courses across semesters");
-      }
-      if (coursePatterns.filter(c => c.grade).length < 4) {
-        recommendations.push("Take more courses to improve prediction accuracy");
-      }
-      recommendations.push(`Focus on courses with difficulty level ${(target / parseFloat(scale) * 0.7).toFixed(2)} or lower`);
+    if (!currentCGPA || !targetCGPA || isNaN(parseFloat(targetCGPA))) {
+      setPrediction(null);
+      return;
     }
 
-    setPrediction({
-      predictedCGPA,
-      recommendations,
-      targetAchievable,
-    });
+    try {
+      const target = parseFloat(targetCGPA);
+      if (target < 0 || target > parseFloat(scale)) {
+        setPrediction(null);
+        return;
+      }
+      const coursePatterns = courses.map(course => {
+        const lowercaseName = course.name.toLowerCase();
+        let difficulty = 0.7; // default difficulty
+        
+        // Find matching difficulty patterns
+        Object.entries(courseDifficulty).forEach(([key, value]) => {
+          if (lowercaseName.includes(key)) {
+            difficulty = value;
+          }
+        });
+        
+        return {
+          name: course.name,
+          difficulty,
+          grade: course.grade,
+        };
+      });
+
+      // Predict based on current performance and course patterns
+      const averagePerformance = coursePatterns.reduce((acc, course) => {
+        if (course.grade) {
+          const gradeValue = gradePoints[scale][course.grade];
+          if (typeof gradeValue === 'number') {
+            return acc + (gradeValue / parseFloat(scale) * course.difficulty);
+          }
+        }
+        return acc;
+      }, 0) / coursePatterns.filter(c => c.grade).length;
+
+      const predictedCGPA = Number((currentCGPA * 0.7 + averagePerformance * 0.3).toFixed(2));
+      const targetAchievable = predictedCGPA >= target - 0.5;
+
+      // Generate smart recommendations
+      const recommendations = [];
+      if (predictedCGPA < target) {
+        if (coursePatterns.some(c => c.difficulty > 0.7)) {
+          recommendations.push("Consider balancing difficult courses across semesters");
+        }
+        if (coursePatterns.filter(c => c.grade).length < 4) {
+          recommendations.push("Take more courses to improve prediction accuracy");
+        }
+        recommendations.push(`Focus on courses with difficulty level ${(target / parseFloat(scale) * 0.7).toFixed(2)} or lower`);
+      }
+
+      setPrediction({
+        predictedCGPA,
+        recommendations,
+        targetAchievable,
+      });
+    } catch (error) {
+      console.error('Error calculating prediction:', error);
+      setPrediction(null);
+    }
   };
 
   // Function to calculate required grades for target CGPA
@@ -238,37 +273,22 @@ const CGPAForm = () => {
 
   // Helper function to get required grade letter based on point average
   const getRequiredGrade = (pointAverage: number): string => {
-    const gradeRanges = {
-      '4.0': [
-        { min: 3.5, grade: 'A' },
-        { min: 2.5, grade: 'B' },
-        { min: 1.5, grade: 'C' },
-        { min: 0.5, grade: 'D' },
-        { min: 0, grade: 'F' }
-      ],
-      '5.0': [
-        { min: 4.5, grade: 'A' },
-        { min: 3.5, grade: 'B' },
-        { min: 2.5, grade: 'C' },
-        { min: 1.5, grade: 'D' },
-        { min: 0, grade: 'F' }
-      ],
-      '7.0': [
-        { min: 6.0, grade: 'A' },
-        { min: 5.0, grade: 'B+' },
-        { min: 4.0, grade: 'B' },
-        { min: 3.0, grade: 'C+' },
-        { min: 2.0, grade: 'C' },
-        { min: 1.0, grade: 'D' },
-        { min: 0, grade: 'F' }
-      ]
-    };
-
-    const grades = gradeRanges[scale];
-    for (const { min, grade } of grades) {
-      if (pointAverage >= min) return grade;
+    if (pointAverage < 0 || !scale || !gradeRangeMap[scale]) {
+      return 'F';
     }
-    return 'F';
+
+    try {
+      const grades = gradeRangeMap[scale];
+      for (const gradeRange of grades) {
+        if (pointAverage >= gradeRange.min) {
+          return gradeRange.grade;
+        }
+      }
+      return 'F';
+    } catch (error) {
+      console.error('Error in getRequiredGrade:', error);
+      return 'F';
+    }
   };
 
   const getTotalCredits = () => {
@@ -300,9 +320,16 @@ const CGPAForm = () => {
         <input
           type="number"
           step="0.01"
-          placeholder="Set your target CGPA"
+          min="0"
+          max={parseFloat(scale)}
+          placeholder={`Set your target CGPA (max ${scale})`}
           value={targetCGPA}
-          onChange={(e) => setTargetCGPA(e.target.value)}
+          onChange={(e) => {
+            const value = parseFloat(e.target.value);
+            if (value >= 0 && value <= parseFloat(scale)) {
+              setTargetCGPA(e.target.value);
+            }
+          }}
           className="flex-1 px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
@@ -333,9 +360,9 @@ const CGPAForm = () => {
                 className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Select Grade</option>
-                {Object.entries(gradePoints[scale]).map(([grade, point]) => (
+                {Object.entries(gradePoints[scale]).map(([grade]) => (
                   <option key={grade} value={grade}>
-                    {grade} ({gradeRanges[scale][grade]})
+                    {grade} ({gradeRangeMap[scale].find(range => range.grade === grade)?.min})
                   </option>
                 ))}
               </select>
@@ -426,7 +453,6 @@ const CGPAForm = () => {
               courses={courses}
               scale={scale}
               currentCGPA={cgpa}
-              scenarios={scenarios}
               gradePoints={gradePoints}
             />
 
@@ -495,10 +521,15 @@ const CGPAForm = () => {
               <input
                 type="number"
                 value={targetCGPA}
-                onChange={(e) => setTargetCGPA(e.target.value)}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (value >= 0 && value <= parseFloat(scale)) {
+                    setTargetCGPA(e.target.value);
+                  }
+                }}
                 step="0.01"
                 min="0"
-                max={scale}
+                max={parseFloat(scale)}
                 className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder={`Enter target CGPA (max ${scale})`}
               />
@@ -511,7 +542,12 @@ const CGPAForm = () => {
               <input
                 type="number"
                 value={remainingUnits}
-                onChange={(e) => setRemainingUnits(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (value >= 0) {
+                    setRemainingUnits(value);
+                  }
+                }}
                 min="0"
                 className="w-full px-4 py-2 rounded-lg bg-white/50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Enter remaining units"
