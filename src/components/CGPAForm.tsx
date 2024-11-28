@@ -277,37 +277,38 @@ const CGPAForm: FC = () => {
         {/* Course List */}
         <div className="space-y-4">
           {/* Course Entry Labels */}
-          <div className="grid grid-cols-[auto,1fr,auto,auto] gap-2 md:gap-4 px-2 md:px-4">
-            <label className="text-sm md:text-sm font-medium text-gray-700 w-24 md:w-32">Course Unit</label>
+          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 md:gap-4 px-2 md:px-4">
             <label className="text-sm md:text-sm font-medium text-gray-700">Course Code</label>
+            <label className="text-sm md:text-sm font-medium text-gray-700 w-24 md:w-32">Course Unit</label>
             <label className="text-sm md:text-sm font-medium text-gray-700 w-32 md:w-48">Grade</label>
             <div className="w-10"></div>
           </div>
           
           {courses.map((course) => (
-            <div key={course.id} className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-lg shadow">
-              <input
-                type="number"
-                value={course.credits}
-                onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
-                min="0"
-                max="6"
-                className="w-full md:w-32 border rounded px-3 py-3 text-base md:text-base"
-                placeholder="Units"
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
+            <div key={course.id} className="grid grid-cols-[1fr,auto,auto,auto] items-start gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-lg shadow">
               <input
                 type="text"
                 value={course.name}
                 onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
                 placeholder="Enter course code"
-                className="flex-1 border rounded px-3 py-3 text-base md:text-base w-full md:w-auto"
+                className="w-full border rounded px-3 py-3 text-base md:text-base"
               />
+              <select
+                value={course.credits}
+                onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
+                className="w-24 md:w-32 border rounded px-3 py-3 text-base md:text-base appearance-none bg-white"
+              >
+                <option value="">Units</option>
+                {[1, 2, 3, 4, 5, 6].map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                className="border rounded px-3 py-3 text-base md:text-base w-full md:w-48"
+                className="w-32 md:w-48 border rounded px-3 py-3 text-base md:text-base"
               >
                 <option value="">Select grade</option>
                 {getGradeOptions(scale).map(({ grade, range }) => (
@@ -318,7 +319,7 @@ const CGPAForm: FC = () => {
               </select>
               <button
                 onClick={() => removeCourse(course.id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded w-full md:w-auto flex justify-center md:block"
+                className="p-2 text-red-600 hover:bg-red-50 rounded flex justify-center items-center"
                 title="Remove course"
               >
                 <Trash2 className="w-5 h-5" />
