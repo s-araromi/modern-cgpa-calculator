@@ -224,12 +224,12 @@ const CGPAForm: FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Choose your Grading Scale</h2>
+        <h2 className="text-2xl md:text-2xl font-bold mb-4">Choose your Grading Scale</h2>
         <div className="flex gap-4 mb-4">
           <select
             value={scale}
             onChange={(e) => setScale(e.target.value as GradeScale)}
-            className="border rounded px-3 py-2 w-full"
+            className="border rounded px-3 py-2 w-full text-base md:text-base"
           >
             <option value="4.0">4.0 Scale (Standard US Scale)</option>
             <option value="5.0">5.0 Scale (Nigerian Scale)</option>
@@ -238,11 +238,11 @@ const CGPAForm: FC = () => {
         </div>
 
         {/* Grade Scale Information */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Grade Scale Information</h3>
-          <div className="grid grid-cols-3 gap-4">
+        <div className="mb-6 bg-white p-4 md:p-4 rounded-lg shadow">
+          <h3 className="text-lg md:text-lg font-semibold mb-2">Grade Scale Information</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
             {getGradeOptions(scale).map(({ grade, point, range }) => (
-              <div key={grade} className="bg-gray-50 p-2 rounded">
+              <div key={grade} className="bg-gray-50 p-2 md:p-2 rounded text-sm md:text-base">
                 <span className="font-semibold">{grade}</span>
                 <span className="text-gray-600 ml-2">({range})</span>
                 <span className="block text-sm text-gray-500">{point} points</span>
@@ -251,14 +251,14 @@ const CGPAForm: FC = () => {
           </div>
           
           {/* Help and Documentation */}
-          <div className="mt-4 text-sm text-gray-600">
-            <h4 className="font-semibold mb-2">Understanding Grade Scales:</h4>
+          <div className="mt-4 text-sm md:text-base text-gray-600">
+            <h4 className="font-semibold mb-2 text-base md:text-base">Understanding Grade Scales:</h4>
             <ul className="list-disc pl-5 space-y-2">
               <li><strong>4.0 Scale:</strong> Standard US grading system used by most universities. A = 4.0 (Excellent), F = 0.0 (Fail)</li>
               <li><strong>5.0 Scale:</strong> Common in Nigerian universities. A = 5.0 (Excellent), F = 0.0 (Fail)</li>
               <li><strong>7.0 Scale:</strong> Advanced scale with more grade points for finer differentiation. A = 7.0 (Excellent), F = 0.0 (Fail)</li>
             </ul>
-            <h4 className="font-semibold mt-4 mb-2">How to Use:</h4>
+            <h4 className="font-semibold mt-4 mb-2 text-base md:text-base">How to Use:</h4>
             <ol className="list-decimal pl-5 space-y-2">
               <li>Select your institution's grading scale</li>
               <li>Add your courses using the "Add Course" button</li>
@@ -274,38 +274,31 @@ const CGPAForm: FC = () => {
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
         {/* Course List */}
         <div className="space-y-4">
           {/* Course Entry Labels */}
-          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-4 px-4">
-            <label className="text-sm font-medium text-gray-700">Select Course Name</label>
-            <label className="text-sm font-medium text-gray-700 w-48">Select Grade</label>
-            <label className="text-sm font-medium text-gray-700 w-32">Select Course Unit</label>
+          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 md:gap-4 px-2 md:px-4">
+            <label className="text-sm md:text-sm font-medium text-gray-700">Course Name</label>
+            <label className="text-sm md:text-sm font-medium text-gray-700 w-32 md:w-48">Grade</label>
+            <label className="text-sm md:text-sm font-medium text-gray-700 w-24 md:w-32">Credits</label>
             <div className="w-10"></div>
           </div>
           
           {courses.map((course) => (
-            <div key={course.id} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow">
+            <div key={course.id} className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-lg shadow">
               <input
                 type="text"
                 value={course.name}
                 onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
                 placeholder="Enter course name"
-                className="flex-1 border rounded px-3 py-2"
+                className="flex-1 border rounded px-3 py-2 text-base md:text-base w-full md:w-auto"
               />
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                className="border rounded px-3 py-2 w-48"
+                className="border rounded px-3 py-2 text-base md:text-base w-full md:w-48"
               >
-                <option value="">Select your grade</option>
+                <option value="">Select grade</option>
                 {getGradeOptions(scale).map(({ grade, range }) => (
                   <option key={grade} value={grade}>
                     {grade} ({range})
@@ -318,12 +311,12 @@ const CGPAForm: FC = () => {
                 onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
                 min="0"
                 max="6"
-                className="w-32 border rounded px-3 py-2"
-                placeholder="Enter units"
+                className="w-full md:w-32 border rounded px-3 py-2 text-base md:text-base"
+                placeholder="Credits"
               />
               <button
                 onClick={() => removeCourse(course.id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                className="p-2 text-red-600 hover:bg-red-50 rounded w-full md:w-auto flex justify-center md:block"
                 title="Remove course"
               >
                 <Trash2 className="w-5 h-5" />
@@ -332,55 +325,50 @@ const CGPAForm: FC = () => {
           ))}
         </div>
 
-        <div className="mt-4 flex gap-4">
+        <div className="mt-4 flex flex-col md:flex-row gap-4">
           <button
             onClick={addCourse}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-base md:text-base w-full md:w-auto"
           >
             <PlusCircle className="w-5 h-5" />
             Add Course
           </button>
           <button
             onClick={calculateCGPA}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-base md:text-base w-full md:w-auto"
             disabled={courses.length === 0}
           >
             Calculate CGPA
           </button>
         </div>
 
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
+        {/* Results Section */}
         {cgpa !== null && !error && (
-          <div className="mt-8 p-6 bg-white rounded-lg shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Results</h3>
+          <div className="mt-8 p-4 md:p-6 bg-white rounded-lg shadow-lg">
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">Results</h3>
             <div className="space-y-4">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-semibold">Your CGPA:</span>
-                <span className="text-3xl font-bold text-green-600">{cgpa.toFixed(2)}</span>
-                <span className="text-gray-500">on {scale} scale</span>
+                <span className="text-lg md:text-xl font-semibold">Your CGPA:</span>
+                <span className="text-2xl md:text-3xl font-bold text-green-600">{cgpa.toFixed(2)}</span>
+                <span className="text-base md:text-base text-gray-500">on {scale} scale</span>
               </div>
               
-              <div className="text-lg">
+              <div className="text-base md:text-lg">
                 <span className="font-medium">Degree Classification:</span>
                 <span className="ml-2 text-indigo-600 font-semibold">{getDegreeClassification(cgpa, scale)}</span>
               </div>
 
-              <div className="text-lg">
+              <div className="text-base md:text-lg">
                 <span className="font-medium">Total Credits:</span>
                 <span className="ml-2">{totalCredits}</span>
               </div>
 
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="mt-4 p-3 md:p-4 bg-gray-50 rounded-lg text-sm md:text-base">
                 <h4 className="font-semibold mb-2">Course Summary:</h4>
                 <div className="space-y-2">
                   {courses.map(course => (
-                    <div key={course.id} className="flex justify-between items-center">
-                      <span>{course.name}</span>
+                    <div key={course.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-1 md:gap-0">
+                      <span className="font-medium">{course.name}</span>
                       <span className="text-gray-600">
                         Grade: {course.grade} | Credits: {course.credits}
                       </span>
@@ -391,15 +379,17 @@ const CGPAForm: FC = () => {
             </div>
           </div>
         )}
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm md:text-base">
+            {error}
+          </div>
+        )}
       </div>
 
+      {/* Performance Analysis Section */}
       {cgpa !== null && (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <CourseImpactAnalysis
-            courses={courses}
-            gradePoints={gradePoints}
-            scale={scale}
-          />
+        <div className="mt-8 grid grid-cols-1 gap-6">
           <PerformanceTrends
             cgpa={cgpa}
             previousCGPA={previousCGPA}
