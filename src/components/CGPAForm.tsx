@@ -277,26 +277,37 @@ const CGPAForm: FC = () => {
         {/* Course List */}
         <div className="space-y-4">
           {/* Course Entry Labels */}
-          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 md:gap-4 px-2 md:px-4">
-            <label className="text-sm md:text-sm font-medium text-gray-700">Course Name</label>
+          <div className="grid grid-cols-[auto,1fr,auto,auto] gap-2 md:gap-4 px-2 md:px-4">
+            <label className="text-sm md:text-sm font-medium text-gray-700 w-24 md:w-32">Course Unit</label>
+            <label className="text-sm md:text-sm font-medium text-gray-700">Course Code</label>
             <label className="text-sm md:text-sm font-medium text-gray-700 w-32 md:w-48">Grade</label>
-            <label className="text-sm md:text-sm font-medium text-gray-700 w-24 md:w-32">Credits</label>
             <div className="w-10"></div>
           </div>
           
           {courses.map((course) => (
             <div key={course.id} className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-lg shadow">
               <input
+                type="number"
+                value={course.credits}
+                onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
+                min="0"
+                max="6"
+                className="w-full md:w-32 border rounded px-3 py-3 text-base md:text-base"
+                placeholder="Units"
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+              <input
                 type="text"
                 value={course.name}
                 onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
-                placeholder="Enter course name"
-                className="flex-1 border rounded px-3 py-2 text-base md:text-base w-full md:w-auto"
+                placeholder="Enter course code"
+                className="flex-1 border rounded px-3 py-3 text-base md:text-base w-full md:w-auto"
               />
               <select
                 value={course.grade}
                 onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                className="border rounded px-3 py-2 text-base md:text-base w-full md:w-48"
+                className="border rounded px-3 py-3 text-base md:text-base w-full md:w-48"
               >
                 <option value="">Select grade</option>
                 {getGradeOptions(scale).map(({ grade, range }) => (
@@ -305,15 +316,6 @@ const CGPAForm: FC = () => {
                   </option>
                 ))}
               </select>
-              <input
-                type="number"
-                value={course.credits}
-                onChange={(e) => updateCourse(course.id, 'credits', e.target.value)}
-                min="0"
-                max="6"
-                className="w-full md:w-32 border rounded px-3 py-2 text-base md:text-base"
-                placeholder="Credits"
-              />
               <button
                 onClick={() => removeCourse(course.id)}
                 className="p-2 text-red-600 hover:bg-red-50 rounded w-full md:w-auto flex justify-center md:block"
@@ -325,17 +327,17 @@ const CGPAForm: FC = () => {
           ))}
         </div>
 
-        <div className="mt-4 flex flex-col md:flex-row gap-4">
+        <div className="mt-6 flex flex-col md:flex-row gap-4">
           <button
             onClick={addCourse}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-base md:text-base w-full md:w-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-base md:text-base w-full md:w-auto"
           >
             <PlusCircle className="w-5 h-5" />
             Add Course
           </button>
           <button
             onClick={calculateCGPA}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-base md:text-base w-full md:w-auto"
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-base md:text-base w-full md:w-auto"
             disabled={courses.length === 0}
           >
             Calculate CGPA
@@ -397,6 +399,12 @@ const CGPAForm: FC = () => {
             consecutiveImprovement={consecutiveImprovement}
             totalCredits={totalCredits}
             courses={courses}
+          />
+          <CourseImpactAnalysis
+            courses={courses}
+            scale={scale}
+            gradePoints={gradePoints}
+            currentCGPA={cgpa}
           />
         </div>
       )}

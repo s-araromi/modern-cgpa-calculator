@@ -21,7 +21,7 @@ export default function App() {
           
           {/* Main Title */}
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Modern CGPA Calculator
+            CGPA Calculator and Converter
           </h2>
           
           {/* Tagline with Subtle Animation */}
