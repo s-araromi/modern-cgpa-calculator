@@ -1,9 +1,7 @@
-import { useState, type FC, useEffect, useCallback, useMemo } from 'react';
+import { useState, type FC, useEffect } from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
-import ReportExporter from './ReportExporter';
-import AchievementSystem from './AchievementSystem';
 
 interface Course {
   id: string;
@@ -15,12 +13,18 @@ interface Course {
 type GradeScale = '4.0' | '5.0' | '7.0';
 type GradePoints = Record<GradeScale, Record<string, number>>;
 
+interface GradeRanges {
+  [scale: string]: {
+    [grade: string]: string;
+  };
+}
+
 const CGPAForm: FC = () => {
   const [scale, setScale] = useState<GradeScale>('4.0');
   const [courses, setCourses] = useState<Course[]>([]);
   const [cgpa, setCGPA] = useState<number | null>(null);
   const [previousCGPA, setPreviousCGPA] = useState<number | null>(null);
-  const [consecutiveImprovement, setConsecutiveImprovement] = useState<number>(0);
+  const [consecutiveImprovement] = useState<number>(0);
   const [totalCredits, setTotalCredits] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -185,33 +189,33 @@ const CGPAForm: FC = () => {
   };
 
   const getGradeOptions = (scale: GradeScale) => {
-    const ranges = {
+    const ranges: GradeRanges = {
       '4.0': {
-        'A': '70-100%',
-        'B': '60-69%',
-        'C': '50-59%',
-        'D': '45-49%',
-        'E': '40-44%',
-        'F': '0-39%'
+        'A': '70-100',
+        'B': '60-69',
+        'C': '50-59',
+        'D': '45-49',
+        'E': '40-44',
+        'F': '0-39',
       },
       '5.0': {
-        'A': '70-100%',
-        'B': '60-69%',
-        'C': '50-59%',
-        'D': '45-49%',
-        'E': '40-44%',
-        'F': '0-39%'
+        'A': '70-100',
+        'B': '60-69',
+        'C': '50-59',
+        'D': '45-49',
+        'E': '40-44',
+        'F': '0-39',
       },
       '7.0': {
-        'A': '70-100%',
-        'B+': '65-69%',
-        'B': '60-64%',
-        'C+': '55-59%',
-        'C': '50-54%',
-        'D': '45-49%',
-        'E': '40-44%',
-        'F': '0-39%'
-      }
+        'A': '70-100',
+        'B+': '65-69',
+        'B': '60-64',
+        'C+': '55-59',
+        'C': '50-54',
+        'D': '45-49',
+        'E': '40-44',
+        'F': '0-39',
+      },
     };
 
     return Object.entries(gradePoints[scale]).map(([grade, point]) => ({
@@ -264,7 +268,7 @@ const CGPAForm: FC = () => {
               <li>Add your courses using the "Add Course" button</li>
               <li>For each course:
                 <ul className="list-disc pl-5 mt-1">
-                  <li>Enter the course name</li>
+                  <li>Enter the course code / name</li>
                   <li>Select your grade (includes percentage range)</li>
                   <li>Enter course units/credits (typically 1-6)</li>
                 </ul>
