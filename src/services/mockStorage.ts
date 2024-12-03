@@ -15,8 +15,6 @@ import type {
   BackupData
 } from '../types/mock';
 
-const STORAGE_KEY = 'cgpa_calculator_data';
-
 interface StorageData {
   users: User[];
   courses: Course[];
@@ -32,6 +30,25 @@ interface StorageData {
   backups: Record<string, BackupData[]>;
   goals: AcademicGoal[];
 }
+
+interface MockStorage {
+  currentUser: User | null;
+  session: { user: User | null };
+  init(): void;
+  getData(): StorageData | null;
+  saveData(data: StorageData): void;
+  utils: {
+    calculateGPA: (courses: Course[]) => number;
+    generateId: () => string;
+  };
+  performanceStats: {
+    calculate: (userId: string) => PerformanceStats;
+    get: (userId: string) => PerformanceStats;
+  };
+  // ... rest of your implementation
+}
+
+const STORAGE_KEY = 'cgpa_calculator_data';
 
 const defaultData: StorageData = {
   users: [],
@@ -49,39 +66,98 @@ const defaultData: StorageData = {
   goals: []
 };
 
-// Utility function to generate unique IDs
-const generateId = (): string => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
+const mockStorage: MockStorage = {
+  currentUser: null,
+  session: { user: null },
 
-export const mockStorage = {
-  // Current user state
-  currentUser: null as User | null,
-
-  // Data management
-  init: () => {
+  init() {
     const storedData = localStorage.getItem(STORAGE_KEY);
     if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
+      this.saveData({
+        users: [],
+        courses: [],
+        cgpaRecords: [],
+        currentUser: null,
+        semesters: [],
+        academicGoals: [],
+        performanceStats: {},
+        studyTracking: [],
+        assignments: [],
+        backups: {}
+      });
     }
   },
 
-  getData: (): StorageData => {
+  getData(): StorageData | null {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : defaultData;
+    return data ? JSON.parse(data) : null;
   },
 
-  saveData: (data: StorageData) => {
+  saveData(data: StorageData) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   },
 
-  // User management
+  utils: {
+    calculateGPA: (courses: Course[]): number => {
+      if (courses.length === 0) return 0;
+      
+      const totalPoints = courses.reduce((sum, course) => sum + (course.grade * course.units), 0);
+      const totalUnits = courses.reduce((sum, course) => sum + course.units, 0);
+      
+      return totalPoints / totalUnits;
+    },
+    generateId: (): string => {
+      return Math.random().toString(36).substr(2, 9);
+    }
+  },
+
+  performanceStats: {
+    calculate: (userId: string): PerformanceStats => {
+      const storage = mockStorage.getData();
+      const userCourses = storage.courses.filter(c => c.userId === userId);
+      const userSemesters = storage.semesters.filter(s => s.userId === userId);
+      
+      const subjectPerformance = userCourses.reduce((acc, course) => {
+        if (!acc[course.code]) {
+          acc[course.code] = { total: 0, count: 0 };
+        }
+        acc[course.code].total += course.grade;
+        acc[course.code].count += 1;
+        return acc;
+      }, {} as Record<string, { total: number; count: number }>);
+
+      const subjectAverages = Object.entries(subjectPerformance).map(([code, perf]) => ({
+        code,
+        average: perf.total / perf.count
+      }));
+
+      const sortedSubjects = subjectAverages.sort((a, b) => b.average - a.average);
+      
+      return {
+        userId,
+        bestSubjects: sortedSubjects.slice(0, 3).map(s => s.code),
+        weakestSubjects: sortedSubjects.slice(-3).map(s => s.code),
+        averageUnitsPerSemester: userSemesters.reduce((acc, sem) => acc + sem.totalUnits, 0) / (userSemesters.length || 1),
+        gradeDistribution: calculateGradeDistribution(userCourses),
+        semesterPerformance: userSemesters.map(sem => ({
+          semesterId: sem.id,
+          gpa: sem.gpa,
+          improvement: calculateSemesterImprovement(userId, sem)
+        }))
+      };
+    },
+    get: (userId: string): PerformanceStats => {
+      const storage = mockStorage.getData();
+      return storage.performanceStats[userId] || mockStorage.performanceStats.calculate(userId);
+    }
+  },
+
   users: {
     create: (data: Omit<User, 'id' | 'created_at'>): User => {
       const storage = mockStorage.getData();
       const newUser: User = {
         ...data,
-        id: generateId(),
+        id: mockStorage.utils.generateId(),
         created_at: new Date().toISOString()
       };
       storage.users.push(newUser);
@@ -130,13 +206,12 @@ export const mockStorage = {
     }
   },
 
-  // Course management
   courses: {
     create: (data: Omit<Course, 'id' | 'created_at'>): Course => {
       const storage = mockStorage.getData();
       const newCourse: Course = {
         ...data,
-        id: generateId(),
+        id: mockStorage.utils.generateId(),
         created_at: new Date().toISOString()
       };
       storage.courses.push(newCourse);
@@ -179,13 +254,12 @@ export const mockStorage = {
     return mockStorage.getData().performanceStats;
   },
 
-  // Academic goals management
   academicGoals: {
     create: (data: Omit<AcademicGoal, 'id' | 'status' | 'requiredGPA' | 'createdAt' | 'updatedAt'>): AcademicGoal => {
       const storage = mockStorage.getData();
       const newGoal: AcademicGoal = {
         ...data,
-        id: generateId(),
+        id: mockStorage.utils.generateId(),
         status: 'active',
         requiredGPA: 0, // Will be calculated
         createdAt: new Date().toISOString(),
@@ -247,7 +321,6 @@ export const mockStorage = {
     }
   },
 
-  // Predictions and performance analysis
   predictions: {
     generatePrediction: (userId: string, courseId: string): GradePredictionModel => {
       const storage = mockStorage.getData();
@@ -487,7 +560,7 @@ export const mockStorage = {
       const storage = mockStorage.getData();
       const semester: Semester = {
         ...data,
-        id: generateId()
+        id: mockStorage.utils.generateId()
       };
       storage.semesters.push(semester);
       mockStorage.saveData(storage);
@@ -516,7 +589,7 @@ export const mockStorage = {
     create: (userId: string, backupData: Omit<BackupData, "id" | "userId" | "timestamp">) => {
       const storage = mockStorage.getData();
       const newBackup: BackupData = {
-        id: generateId(),
+        id: mockStorage.utils.generateId(),
         userId,
         timestamp: new Date().toISOString(),
         data: backupData.data
@@ -673,7 +746,7 @@ export const mockStorage = {
       // First spread the goal data, then add our computed/default values
       const newGoal: AcademicGoal = {
         ...goal,
-        id: generateId(),
+        id: mockStorage.utils.generateId(),
         userId,
         createdAt: now,
         updatedAt: now,

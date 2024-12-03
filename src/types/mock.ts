@@ -200,36 +200,63 @@ export interface RegisterData {
   fullName: string;
 }
 
-export interface MockStorage {
+export interface StorageData {
   users: User[];
   courses: Course[];
   cgpaRecords: CGPARecord[];
   currentUser: User | null;
   semesters: Semester[];
-  academicGoals: {
-    create: (data: Omit<AcademicGoal, 'id' | 'status' | 'requiredGPA' | 'createdAt' | 'updatedAt'>) => AcademicGoal;
-    update: (id: string, data: Partial<AcademicGoal>) => AcademicGoal;
-    delete: (id: string) => void;
-    get: (id: string) => AcademicGoal | null;
-    getAll: (userId: string) => AcademicGoal[];
-    checkStatus: (userId: string) => void;
-  };
+  academicGoals: AcademicGoal[];
   performanceStats: Record<string, PerformanceStats>;
-  studySessions: StudySession[];
+  studyTracking: StudySession[];
   assignments: Assignment[];
-  gradePredictions: Record<string, GradePrediction[]>;
-  courseRecommendations: Record<string, CourseRecommendation[]>;
-  improvementSuggestions: Record<string, ImprovementSuggestion[]>;
   backups: Record<string, BackupData[]>;
-  predictions: {
-    generatePrediction: (userId: string, courseId: string) => GradePredictionModel;
-    updatePredictionModel: (userId: string, courseId: string, newData: Partial<GradePredictionModel>) => void;
-    getPerformancePatterns: (userId: string) => PerformancePattern[];
-    getPredictionMetrics: (userId: string) => PredictionMetrics;
-    analyzeStudyEffectiveness: (userId: string) => {
-      optimalStudyTime: string;
-      recommendedDuration: number;
-      effectivenessByTime: { [key: string]: number };
-    };
+}
+
+import { AuthResponse } from './auth';
+
+export interface MockStorage {
+  currentUser: User | null;
+  session: { user: User | null };
+  init: () => void;
+  getData: () => StorageData;
+  saveData: (data: StorageData) => void;
+  users: {
+    create: (data: Omit<User, "id" | "created_at">) => User;
+    update: (id: string, data: Partial<User>) => User;
+    delete: (id: string) => void;
+    get: (id: string) => User | null;
+    getAll: () => User[];
+    login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+    logout: () => void;
+  };
+  studyTracking: {
+    create: (data: Omit<StudySession, "id">) => StudySession;
+    update: (id: string, data: Partial<StudySession>) => StudySession;
+    delete: (id: string) => void;
+    get: (id: string) => StudySession | null;
+    getAll: (userId: string) => StudySession[];
+  };
+  assignments: {
+    create: (data: Omit<Assignment, "id">) => Assignment;
+    update: (id: string, data: Partial<Assignment>) => Assignment;
+    delete: (id: string) => void;
+    get: (id: string) => Assignment | null;
+    getAll: (userId: string) => Assignment[];
+  };
+  utils: {
+    calculateGPA: (courses: Course[]) => number;
+    generateId: () => string;
+  };
+  backups: {
+    create: (userId: string, data: Omit<BackupData, "id" | "timestamp">) => BackupData;
+    restore: (backupId: string) => void;
+    getAll: (userId: string) => BackupData[];
+    getById: (backupId: string) => BackupData;
+    delete: (backupId: string) => void;
+  };
+  performanceStats: {
+    calculate: (userId: string) => PerformanceStats;
+    get: (userId: string) => PerformanceStats;
   };
 }

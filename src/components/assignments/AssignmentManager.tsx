@@ -27,6 +27,7 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { mockStorage } from '../../services/mockStorage';
+import { useAuth } from '../auth/AuthContext';
 import type { Assignment, Course } from '../../types/mock';
 
 interface TabPanelProps {
@@ -48,12 +49,13 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export const AssignmentManager: React.FC = () => {
+export const AssignmentManager = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const { user } = useAuth();
 
   // Form states
   const [title, setTitle] = useState('');
@@ -64,14 +66,13 @@ export const AssignmentManager: React.FC = () => {
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
 
   useEffect(() => {
-    const userId = mockStorage.session.getCurrentUser()?.id;
-    if (userId) {
-      setCourses(mockStorage.courses.getAll(userId));
-      setAssignments(mockStorage.assignments.getAll(userId));
+    if (user) {
+      setCourses(mockStorage.courses.getAll(user.id));
+      setAssignments(mockStorage.assignments.getAll(user.id));
       // Check for overdue assignments
-      mockStorage.assignments.checkDeadlines(userId);
+      mockStorage.assignments.checkDeadlines(user.id);
     }
-  }, []);
+  }, [user]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -103,37 +104,35 @@ export const AssignmentManager: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    const userId = mockStorage.session.getCurrentUser()?.id;
-    if (!userId) return;
+    if (user) {
+      const assignmentData = {
+        userId: user.id,
+        courseId,
+        title,
+        description,
+        deadline: new Date(deadline).toISOString(),
+        expectedGrade,
+        priority,
+      };
 
-    const assignmentData = {
-      userId,
-      courseId,
-      title,
-      description,
-      deadline: new Date(deadline).toISOString(),
-      expectedGrade,
-      priority,
-    };
+      if (editingAssignment) {
+        const updated = mockStorage.assignments.update(editingAssignment.id, assignmentData);
+        setAssignments(prev => prev.map(a => a.id === updated.id ? updated : a));
+      } else {
+        const created = mockStorage.assignments.create(assignmentData);
+        setAssignments(prev => [...prev, created]);
+      }
 
-    if (editingAssignment) {
-      const updated = mockStorage.assignments.update(editingAssignment.id, assignmentData);
-      setAssignments(prev => prev.map(a => a.id === updated.id ? updated : a));
-    } else {
-      const created = mockStorage.assignments.create(assignmentData);
-      setAssignments(prev => [...prev, created]);
+      setDialogOpen(false);
+      resetForm();
     }
-
-    setDialogOpen(false);
-    resetForm();
   };
 
   const handleDelete = (id: string) => {
-    const userId = mockStorage.session.getCurrentUser()?.id;
-    if (!userId) return;
-
-    mockStorage.assignments.update(id, { status: 'completed' });
-    setAssignments(prev => prev.filter(a => a.id !== id));
+    if (user) {
+      mockStorage.assignments.update(id, { status: 'completed' });
+      setAssignments(prev => prev.filter(a => a.id !== id));
+    }
   };
 
   const filterAssignments = (status: 'pending' | 'completed' | 'overdue') => {

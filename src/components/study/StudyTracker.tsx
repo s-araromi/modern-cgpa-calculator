@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { StudySession, Course } from '../../types/mock';
 import {
   Box,
   Button,
@@ -20,27 +21,29 @@ import {
   DialogActions,
 } from '@mui/material';
 import { PlayArrow, Stop, Timer } from '@mui/icons-material';
-import { mockStorage } from '../../services/mockStorage';
-import type { StudySession, Course } from '../../types/mock';
+import mockStorage from '../../services/mockStorage';
+import { useAuth } from '../auth/AuthContext';
 
-export const StudyTracker: React.FC = () => {
-  const [activeSession, setActiveSession] = useState<StudySession | null>(null);
+export const StudyTracker = () => {
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [topic, setTopic] = useState('');
   const [efficiency, setEfficiency] = useState<number>(0);
   const [notes, setNotes] = useState('');
-  const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [activeSession, setActiveSession] = useState<StudySession | null>(null);
   const [timer, setTimer] = useState<number>(0);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const userId = mockStorage.session.getCurrentUser()?.id;
-    if (userId) {
-      setCourses(mockStorage.courses.getAll(userId));
-      setSessions(mockStorage.studyTracking.getSessions(userId));
+    if (user) {
+      const userCourses = mockStorage.courses.filter(c => c.userId === user.id);
+      const userSessions = mockStorage.studyTracking.getAll(user.id);
+      setCourses(userCourses);
+      setStudySessions(userSessions);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,23 +55,44 @@ export const StudyTracker: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeSession]);
 
+  const handleCreateSession = (sessionData: Omit<StudySession, 'id'>) => {
+    if (user) {
+      const newSession = mockStorage.studyTracking.create({
+        ...sessionData,
+        userId: user.id
+      });
+      setStudySessions(prev => [...prev, newSession]);
+      setActiveSession(newSession);
+      setTimer(0);
+    }
+  };
+
+  const handleUpdateSession = (id: string, data: Partial<StudySession>) => {
+    if (user) {
+      const updatedSession = mockStorage.studyTracking.update(id, data);
+      setStudySessions(prev => prev.map(s => s.id === id ? updatedSession : s));
+    }
+  };
+
+  const handleDeleteSession = (id: string) => {
+    if (user) {
+      mockStorage.studyTracking.delete(id);
+      setStudySessions(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
   const handleStartSession = () => {
     if (!selectedCourse || !topic) return;
 
-    const userId = mockStorage.session.getCurrentUser()?.id;
-    if (!userId) return;
-
-    const session = mockStorage.studyTracking.startSession({
-      userId,
-      courseId: selectedCourse,
+    const sessionData = {
+      courseId: selectedCourse.id,
       topic,
       startTime: new Date().toISOString(),
       efficiency: 0,
       notes: ''
-    });
+    };
 
-    setActiveSession(session);
-    setTimer(0);
+    handleCreateSession(sessionData);
   };
 
   const handleEndSession = () => {
@@ -79,13 +103,13 @@ export const StudyTracker: React.FC = () => {
   const handleConfirmEndSession = () => {
     if (!activeSession) return;
 
-    const updatedSession = mockStorage.studyTracking.endSession(
-      activeSession.id,
+    const data = {
+      endTime: new Date().toISOString(),
       efficiency,
       notes
-    );
+    };
 
-    setSessions(prev => [...prev, updatedSession]);
+    handleUpdateSession(activeSession.id, data);
     setActiveSession(null);
     setEfficiency(0);
     setNotes('');
@@ -99,6 +123,11 @@ export const StudyTracker: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes
       .toString()
       .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleCourseSelect = (courseId: string) => {
+    const selected = courses.find(c => c.id === courseId);
+    setSelectedCourse(selected || null);
   };
 
   return (
@@ -121,11 +150,12 @@ export const StudyTracker: React.FC = () => {
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Course</InputLabel>
                     <Select
-                      value={selectedCourse}
-                      onChange={(e) => setSelectedCourse(e.target.value)}
+                      value={selectedCourse?.id || ''}
+                      onChange={(e) => handleCourseSelect(e.target.value)}
                       label="Course"
                     >
-                      {courses.map((course) => (
+                      <MenuItem value="">Select a course</MenuItem>
+                      {courses.map(course => (
                         <MenuItem key={course.id} value={course.id}>
                           {course.code} - {course.name}
                         </MenuItem>
@@ -160,7 +190,7 @@ export const StudyTracker: React.FC = () => {
                   </Typography>
 
                   <Typography variant="subtitle1" gutterBottom>
-                    Course: {courses.find(c => c.id === activeSession.courseId)?.name}
+                    Course: {selectedCourse?.name}
                   </Typography>
                   <Typography variant="subtitle1" gutterBottom>
                     Topic: {activeSession.topic}
@@ -190,7 +220,7 @@ export const StudyTracker: React.FC = () => {
                 Recent Study Sessions
               </Typography>
 
-              {sessions.slice(-5).reverse().map((session) => (
+              {studySessions.slice(-5).reverse().map(session => (
                 <Card key={session.id} sx={{ mb: 2, bgcolor: 'background.paper' }}>
                   <CardContent>
                     <Typography variant="subtitle1">

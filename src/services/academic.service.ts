@@ -1,5 +1,5 @@
-import { mockStorage } from './mockStorage';
-import type { AcademicGoal, Semester, BackupData } from '../types/mock';
+import mockStorage from './mockStorage';
+import type { AcademicGoal, Semester, BackupData, PerformanceStats } from '../types/mock';
 
 export const academicService = {
   // Goal Management
@@ -48,6 +48,11 @@ export const academicService = {
     }
   },
 
+  getGoals: (userId: string): AcademicGoal[] => {
+    const storage = mockStorage.getData();
+    return storage.academicGoals.filter(g => g.userId === userId);
+  },
+
   // Semester Management
   updateSemester: async (semesterId: string, updates: Partial<Semester>) => {
     try {
@@ -59,30 +64,39 @@ export const academicService = {
   },
 
   // Backup Management
-  createBackup: async (userId: string) => {
-    try {
-      const storage = mockStorage.getData();
-      
-      // Gather all user-related data
-      const user = storage.users.find(u => u.id === userId);
-      if (!user) throw new Error('User not found');
+  createBackup: (userId: string): BackupData => {
+    const storage = mockStorage.getData();
+    const userData = storage.users.find(u => u.id === userId);
+    const userCourses = storage.courses.filter(c => c.userId === userId);
+    const userSemesters = storage.semesters.filter(s => s.userId === userId);
+    const userCGPARecords = storage.cgpaRecords.filter(r => r.userId === userId);
+    const userGoals = storage.academicGoals.filter(g => g.userId === userId);
+    const userStats = storage.performanceStats[userId] || {
+      userId,
+      bestSubjects: [],
+      weakestSubjects: [],
+      averageUnitsPerSemester: 0,
+      gradeDistribution: [],
+      semesterPerformance: []
+    };
 
-      const backupData: Omit<BackupData, "id" | "timestamp"> = {
-        data: {
-          user,
-          courses: storage.courses.filter(c => c.userId === userId),
-          semesters: storage.semesters.filter(s => s.userId === userId),
-          cgpaRecords: storage.cgpaRecords.filter(r => r.userId === userId),
-          academicGoals: storage.goals.getAll(userId),
-          performanceStats: storage.stats.calculate(userId)
-        }
-      };
-
-      return mockStorage.backups.create(userId, backupData);
-    } catch (error) {
-      console.error('Error creating backup:', error);
-      throw new Error('Failed to create backup');
+    if (!userData) {
+      throw new Error('User not found');
     }
+
+    const backupData: Omit<BackupData, 'id' | 'timestamp'> = {
+      userId,
+      data: {
+        user: userData,
+        courses: userCourses,
+        semesters: userSemesters,
+        cgpaRecords: userCGPARecords,
+        academicGoals: userGoals,
+        performanceStats: userStats
+      }
+    };
+
+    return mockStorage.backups.create(userId, backupData);
   },
 
   restoreBackup: async (backupId: string) => {
@@ -110,5 +124,19 @@ export const academicService = {
       console.error('Error deleting backup:', error);
       throw new Error('Failed to delete backup');
     }
+  },
+
+  getStats: (userId: string): PerformanceStats => {
+    const storage = mockStorage.getData();
+    return storage.performanceStats[userId] || {
+      userId,
+      bestSubjects: [],
+      weakestSubjects: [],
+      averageUnitsPerSemester: 0,
+      gradeDistribution: [],
+      semesterPerformance: []
+    };
   }
 };
+
+export default academicService;

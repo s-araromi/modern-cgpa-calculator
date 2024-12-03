@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   email: string;
   fullName: string;
 }
@@ -13,12 +13,17 @@ export interface RegisterData extends LoginCredentials {
   fullName: string;
 }
 
-export interface LoginResponse {
+export interface AuthResponse {
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+  };
   token: string;
-  user: User;
 }
 
-export interface RegisterResponse extends LoginResponse {}
+export interface LoginResponse extends AuthResponse {}
+export interface RegisterResponse extends AuthResponse {}
 
 export interface AuthContextType {
   user: User | null;

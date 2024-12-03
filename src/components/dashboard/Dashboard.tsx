@@ -20,7 +20,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import academicService from '../../services/academic.service';
+import { academicService } from '../../services/academic.service';
 
 export const Dashboard: React.FC = () => {
   const theme = useTheme();
