@@ -13,6 +13,11 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^6.1.9",
+    "@mui/material": "^6.1.9",
+    "@supabase/supabase-js": "^2.46.2",
     "axios": "^1.7.8",
     "chart.js": "^4.4.1",
     "html2canvas": "^1.4.1",
@@ -24,6 +29,7 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.0.1",
+    "recharts": "^2.13.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
