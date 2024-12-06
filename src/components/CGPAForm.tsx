@@ -2,6 +2,7 @@ import { useState, type FC, useEffect } from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import PerformanceTrends from './PerformanceTrends';
+import ReportExporter from './ReportExporter'; // Import the ReportExporter component
 
 interface Course {
   id: string;
@@ -352,7 +353,16 @@ const CGPAForm: FC = () => {
         {/* Results Section */}
         {cgpa !== null && !error && (
           <div className="mt-8 p-4 md:p-6 bg-white rounded-lg shadow-lg">
-            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">Results</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-800">Results</h3>
+              <ReportExporter
+                cgpa={cgpa}
+                scale={scale}
+                courses={courses}
+                classification={getDegreeClassification(cgpa, scale)}
+                totalCredits={totalCredits}
+              />
+            </div>
             <div className="space-y-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-lg md:text-xl font-semibold">Your CGPA:</span>

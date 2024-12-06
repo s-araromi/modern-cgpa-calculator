@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-// For development, use mock API
-const IS_MOCK = true;
-const BASE_URL = IS_MOCK ? '' : 'http://localhost:5000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -10,31 +8,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Mock API responses
-const mockResponses: Record<string, any> = {
-  '/auth/register': {
-    token: 'mock-token',
-    user: {
-      id: 1,
-      email: '',
-      fullName: '',
-    },
-  },
-  '/auth/login': {
-    token: 'mock-token',
-    user: {
-      id: 1,
-      email: '',
-      fullName: '',
-    },
-  },
-  '/auth/me': {
-    id: 1,
-    email: '',
-    fullName: '',
-  },
-};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -50,28 +23,10 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor with mock support
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (IS_MOCK && error.config?.url) {
-      // Mock successful response
-      const mockData = mockResponses[error.config.url];
-      if (mockData) {
-        if (error.config.method === 'post' && error.config.data) {
-          const requestData = JSON.parse(error.config.data);
-          if ('user' in mockData) {
-            mockData.user.email = requestData.email;
-            mockData.user.fullName = requestData.fullName;
-          } else {
-            mockData.email = requestData.email;
-            mockData.fullName = requestData.fullName;
-          }
-        }
-        return Promise.resolve({ data: mockData });
-      }
-    }
-
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
@@ -79,5 +34,51 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Auth API
+export const authAPI = {
+  register: async (data: { email: string; password: string; firstName: string; lastName: string }) =>
+    api.post('/auth/register', data),
+  login: async (data: { email: string; password: string }) =>
+    api.post('/auth/login', data),
+  getCurrentUser: async () => api.get('/auth/me'),
+};
+
+// Semester API
+export const semesterAPI = {
+  getAll: async () => api.get('/semesters'),
+  getOne: async (id: string) => api.get(`/semesters/${id}`),
+  create: async (data: any) => api.post('/semesters', data),
+  update: async (id: string, data: any) => api.put(`/semesters/${id}`, data),
+  delete: async (id: string) => api.delete(`/semesters/${id}`),
+};
+
+// Course API
+export const courseAPI = {
+  getAll: async (semesterId: string) => api.get(`/semesters/${semesterId}/courses`),
+  getOne: async (semesterId: string, courseId: string) => 
+    api.get(`/semesters/${semesterId}/courses/${courseId}`),
+  create: async (semesterId: string, data: any) => 
+    api.post(`/semesters/${semesterId}/courses`, data),
+  update: async (semesterId: string, courseId: string, data: any) => 
+    api.put(`/semesters/${semesterId}/courses/${courseId}`, data),
+  delete: async (semesterId: string, courseId: string) => 
+    api.delete(`/semesters/${semesterId}/courses/${courseId}`),
+};
+
+// Analytics API
+export const analyticsAPI = {
+  getSemesterAnalytics: async (semesterId: string) => 
+    api.get(`/analytics/semester/${semesterId}`),
+  getOverallAnalytics: async () => api.get('/analytics/overall'),
+};
+
+// Goals API
+export const goalsAPI = {
+  getAll: async () => api.get('/goals'),
+  create: async (data: any) => api.post('/goals', data),
+  update: async (id: string, data: any) => api.put(`/goals/${id}`, data),
+  delete: async (id: string) => api.delete(`/goals/${id}`),
+};
 
 export default api;

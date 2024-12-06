@@ -1,18 +1,26 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import authService from '../../services/auth.service';
+import { authAPI } from '../../services/api';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
+  matricNumber?: string;
+  department?: string;
+  faculty?: string;
+  level?: number;
+  role: 'student' | 'admin';
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (token: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<void>;
   logout: () => void;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -35,49 +43,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const initializeAuth = async () => {
-      if (!mounted) return;
-
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const userData = await authService.getCurrentUser();
-          if (mounted) {
-            setUser(userData);
-            setLoading(false);
-          }
+          const response = await authAPI.getCurrentUser();
+          setUser(response.data);
         } catch (err) {
-          if (mounted) {
-            localStorage.removeItem('token');
-            setError(err instanceof Error ? err.message : 'An error occurred');
-            setLoading(false);
-          }
-        }
-      } else {
-        if (mounted) {
-          setLoading(false);
+          localStorage.removeItem('token');
+          setError('Session expired. Please login again.');
         }
       }
+      setLoading(false);
     };
 
     initializeAuth();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
-  const login = async (token: string) => {
-    localStorage.setItem('token', token);
+  const login = async (email: string, password: string) => {
     try {
-      const userData = await authService.getCurrentUser();
-      setUser(userData);
       setError(null);
-    } catch (err) {
-      localStorage.removeItem('token');
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const response = await authAPI.login({ email, password });
+      const { token, user } = response.data;
+      localStorage.setItem('token', token);
+      setUser(user);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to login. Please try again.');
+      throw err;
+    }
+  };
+
+  const register = async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+    try {
+      setError(null);
+      const response = await authAPI.register(data);
+      const { token, user } = response.data;
+      localStorage.setItem('token', token);
+      setUser(user);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to register. Please try again.');
       throw err;
     }
   };
@@ -85,19 +89,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    setError(null);
   };
 
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-  };
+  const clearError = () => setError(null);
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        clearError,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

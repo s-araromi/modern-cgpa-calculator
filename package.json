@@ -17,7 +17,6 @@
     "@emotion/styled": "^11.13.5",
     "@mui/icons-material": "^6.1.9",
     "@mui/material": "^6.1.9",
-    "@supabase/supabase-js": "^2.46.2",
     "axios": "^1.7.8",
     "chart.js": "^4.4.1",
     "html2canvas": "^1.4.1",

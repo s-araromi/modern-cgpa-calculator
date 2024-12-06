@@ -17,15 +17,17 @@ type GradePoints = Record<GradeScale, Record<string, number>>;
 interface ReportExporterProps {
   courses: Course[];
   scale: GradeScale;
-  currentCGPA: number | null;
-  gradePoints: GradePoints;
+  cgpa: number;
+  classification: string;
+  totalCredits: number;
 }
 
 const ReportExporter: React.FC<ReportExporterProps> = ({
   courses,
   scale,
-  currentCGPA,
-  gradePoints,
+  cgpa,
+  classification,
+  totalCredits,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -40,22 +42,23 @@ const ReportExporter: React.FC<ReportExporterProps> = ({
       
       // CGPA Summary
       doc.setFontSize(16);
-      doc.text(`Current CGPA: ${currentCGPA?.toFixed(2) || 'N/A'}`, 20, 40);
-      doc.text(`Grading Scale: ${scale}`, 20, 50);
+      doc.text(`CGPA: ${cgpa.toFixed(2)}`, 20, 40);
+      doc.text(`Classification: ${classification}`, 20, 50);
+      doc.text(`Grading Scale: ${scale}`, 20, 60);
+      doc.text(`Total Credits: ${totalCredits}`, 20, 70);
       
       // Course Table
       doc.setFontSize(12);
       const tableData = courses.map(course => [
         course.name,
         course.grade,
-        course.credits.toString(),
-        (gradePoints[scale][course.grade] * course.credits).toFixed(2)
+        course.credits.toString()
       ]);
       
       doc.autoTable({
-        head: [['Course', 'Grade', 'Credits', 'Points']],
+        head: [['Course Code', 'Grade', 'Units']],
         body: tableData,
-        startY: 70,
+        startY: 90,
       });
       
       // Save the PDF
@@ -75,11 +78,9 @@ const ReportExporter: React.FC<ReportExporterProps> = ({
       
       // Course data
       const courseData = courses.map(course => ({
-        'Course Name': course.name,
+        'Course Code': course.name,
         'Grade': course.grade,
-        'Credits': course.credits,
-        'Grade Points': gradePoints[scale][course.grade],
-        'Total Points': gradePoints[scale][course.grade] * course.credits
+        'Units': course.credits
       }));
       
       const courseSheet = XLSX.utils.json_to_sheet(courseData);
@@ -87,10 +88,11 @@ const ReportExporter: React.FC<ReportExporterProps> = ({
       
       // Summary data
       const summaryData = [
-        { 'Metric': 'Current CGPA', 'Value': currentCGPA?.toFixed(2) || 'N/A' },
+        { 'Metric': 'CGPA', 'Value': cgpa.toFixed(2) },
+        { 'Metric': 'Classification', 'Value': classification },
         { 'Metric': 'Grading Scale', 'Value': scale },
         { 'Metric': 'Total Courses', 'Value': courses.length },
-        { 'Metric': 'Total Credits', 'Value': courses.reduce((sum, c) => sum + c.credits, 0) }
+        { 'Metric': 'Total Credits', 'Value': totalCredits }
       ];
       
       const summarySheet = XLSX.utils.json_to_sheet(summaryData);
@@ -107,28 +109,25 @@ const ReportExporter: React.FC<ReportExporterProps> = ({
   };
 
   return (
-    <div className="mt-8 p-6 bg-white rounded-xl shadow-lg">
-      <h3 className="text-xl font-semibold text-gray-800 mb-4">Export Report</h3>
-      
-      <div className="flex gap-4">
-        <button
-          onClick={exportToPDF}
-          disabled={isExporting || !courses.length}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FileDown className="w-5 h-5" />
-          Export PDF
-        </button>
-        
-        <button
-          onClick={exportToExcel}
-          disabled={isExporting || !courses.length}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FileSpreadsheet className="w-5 h-5" />
-          Export Excel
-        </button>
-      </div>
+    <div className="flex gap-2">
+      <button
+        onClick={exportToPDF}
+        disabled={isExporting}
+        className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+        title="Export as PDF"
+      >
+        <FileDown className="w-4 h-4" />
+        PDF
+      </button>
+      <button
+        onClick={exportToExcel}
+        disabled={isExporting}
+        className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+        title="Export as Excel"
+      >
+        <FileSpreadsheet className="w-4 h-4" />
+        Excel
+      </button>
     </div>
   );
 };

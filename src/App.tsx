@@ -12,6 +12,7 @@ import AcademicJourney from './components/AcademicJourney';
 import FeedbackForm from './components/FeedbackForm';
 import HelpDocs from './components/HelpDocs';
 import Tooltip from './components/Tooltip';
+import SemesterList from './components/semester/SemesterList';
 
 const App: React.FC = () => {
   return (
@@ -31,7 +32,7 @@ const App: React.FC = () => {
           
           <Route path="/calculator" element={
             <ProtectedRoute>
-              <CGPAForm />
+              <SemesterList />
             </ProtectedRoute>
           } />
           
