@@ -164,11 +164,14 @@ const CGPAForm: FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <GraduationCap className="w-12 h-12 text-indigo-600" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
-            GRADIENT
-          </h1>
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3">
+            <GraduationCap className="w-12 h-12 text-indigo-600" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
+              GRADIENT
+            </h1>
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-800">CGPA Calculator and Converter</h2>
         </div>
         <p className="text-gray-600">From Grades to Greatness...</p>
         <p className="text-gray-600">
@@ -197,7 +200,7 @@ const CGPAForm: FC = () => {
           }`}
         >
           <RefreshCcw className="w-5 h-5" />
-          Converter
+          CGPA Converter
         </button>
         <button
           onClick={() => setActiveTab('semester')}
