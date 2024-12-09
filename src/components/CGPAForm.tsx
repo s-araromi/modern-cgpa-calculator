@@ -5,15 +5,17 @@ import {
   GraduationCap,
   Calculator,
   RefreshCcw,
-  Target
+  Target,
+  Trash2,
+  PlusCircle
 } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import ReportExporter from './ReportExporter';
 import ScaleConverter from './ScaleConverter';
 import SemesterList from './semester/SemesterList';
+import AcademicJourney from './AcademicJourney';
 import { GoalTracker } from './goals/GoalTracker';
 import { StudyTracker } from './study/StudyTracker';
-import AcademicJourney from './AcademicJourney';
 
 interface Course {
   id: string;
@@ -25,6 +27,8 @@ interface Course {
 type GradeScale = '4.0' | '5.0' | '7.0';
 type GradePoints = Record<GradeScale, Record<string, number>>;
 
+type ActiveTab = 'CGPA calculator' | 'CGPA converter' | 'semester' | 'goals' | 'study';
+
 const CGPAForm: FC = () => {
   const [scale, setScale] = useState<GradeScale>('4.0');
   const [courses, setCourses] = useState<Course[]>([]);
@@ -32,7 +36,7 @@ const CGPAForm: FC = () => {
   const [totalCredits, setTotalCredits] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'CGPA calculator' | 'CGPA converter' | 'semester' | 'goals' | 'study'>('calculator');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('CGPA calculator');
 
   const gradePoints: GradePoints = {
     '4.0': {
@@ -174,9 +178,9 @@ const CGPAForm: FC = () => {
 
       <div className="flex space-x-4 justify-center">
         <button
-          onClick={() => setActiveTab('calculator')}
+          onClick={() => setActiveTab('CGPA calculator')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'calculator'
+            activeTab === 'CGPA calculator'
               ? 'bg-indigo-600 text-white'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
@@ -185,9 +189,9 @@ const CGPAForm: FC = () => {
           CGPA Calculator
         </button>
         <button
-          onClick={() => setActiveTab('converter')}
+          onClick={() => setActiveTab('CGPA converter')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'converter'
+            activeTab === 'CGPA converter'
               ? 'bg-indigo-600 text-white'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
@@ -230,7 +234,7 @@ const CGPAForm: FC = () => {
       </div>
 
       <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
-        {activeTab === 'calculator' ? (
+        {activeTab === 'CGPA calculator' ? (
           <>
             <div>
               <h3 className="text-lg font-semibold mb-2">Choose your Grading Scale</h3>
@@ -652,7 +656,7 @@ const CGPAForm: FC = () => {
               </div>
             )}
           </>
-        ) : activeTab === 'converter' ? (
+        ) : activeTab === 'CGPA converter' ? (
           <ScaleConverter />
         ) : activeTab === 'semester' ? (
           <AcademicJourney />
