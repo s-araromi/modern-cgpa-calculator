@@ -1,37 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Chip,
-  IconButton,
-  LinearProgress,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Flag as FlagIcon,
-  Timeline as TimelineIcon,
-} from '@mui/icons-material';
 import { mockStorage } from '../../services/mockStorage';
-import type { AcademicGoal } from '../../types/mock';
+import { AcademicGoal } from '../../types/mock';
 
 export const GoalTracker: React.FC = () => {
   const [goals, setGoals] = useState<AcademicGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [editingGoal, setEditingGoal] = useState<AcademicGoal | null>(null);
-  const [currentCGPA, setCurrentCGPA] = useState<number>(0);
 
   // Form states
   const [targetCGPA, setTargetCGPA] = useState('');
@@ -39,72 +14,95 @@ export const GoalTracker: React.FC = () => {
   const [strategies, setStrategies] = useState<string[]>(['']);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const currentUser = mockStorage.currentUser;
-      if (!currentUser) return;
-
-      const userId = currentUser.id;
-      const userGoals = mockStorage.academicGoals.getAll(userId);
-      setGoals(userGoals);
-      
-      // Get latest CGPA from CGPA records
-      const cgpaRecords = mockStorage.cgpaRecords
-        .filter(record => record.userId === userId)
-        .sort((a, b) => new Date(b.calculated_at).getTime() - new Date(a.calculated_at).getTime());
-      
-      const latestCGPA = cgpaRecords.length > 0 ? cgpaRecords[0].cumulativeGPA : 0;
-      setCurrentCGPA(latestCGPA);
-
-      // Check goal statuses
-      mockStorage.academicGoals.checkStatus(userId);
-      
-      setLoading(false);
-    };
-
-    fetchData();
+    loadGoals();
   }, []);
+
+  const loadGoals = async () => {
+    try {
+      const user = mockStorage.currentUser || { id: '1' }; // Use default user if none exists
+      const userGoals = mockStorage.academicGoals.getAll(user.id);
+      setGoals(userGoals);
+    } catch (error) {
+      console.error('Failed to load goals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddGoal = async () => {
+    try {
+      const user = mockStorage.currentUser || { id: '1' }; // Use default user if none exists
+      const newGoal = {
+        id: Date.now().toString(),
+        userId: user.id,
+        targetCGPA: parseFloat(targetCGPA),
+        currentCGPA: 0,
+        deadline,
+        strategies: strategies.filter(s => s.trim() !== ''),
+        progress: 0,
+        status: 'pending' as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      mockStorage.academicGoals.add(newGoal);
+      await loadGoals();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Failed to create goal:', error);
+    }
+  };
+
+  const handleUpdateGoal = async () => {
+    if (!editingGoal) return;
+
+    try {
+      const updatedGoal = {
+        ...editingGoal,
+        targetCGPA: parseFloat(targetCGPA),
+        deadline,
+        strategies: strategies.filter(s => s.trim() !== ''),
+        updatedAt: new Date().toISOString(),
+      };
+
+      mockStorage.academicGoals.update(editingGoal.id, updatedGoal);
+      await loadGoals();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Failed to update goal:', error);
+    }
+  };
+
+  const handleDeleteGoal = async (goalId: string) => {
+    try {
+      mockStorage.academicGoals.delete(goalId);
+      await loadGoals();
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+    }
+  };
 
   const handleOpenDialog = (goal?: AcademicGoal) => {
     if (goal) {
       setEditingGoal(goal);
       setTargetCGPA(goal.targetCGPA.toString());
-      setDeadline(goal.deadline.split('T')[0]);
-      setStrategies(goal.strategies || ['']);
+      setDeadline(goal.deadline);
+      setStrategies(goal.strategies);
     } else {
       setEditingGoal(null);
-      resetForm();
+      setTargetCGPA('');
+      setDeadline('');
+      setStrategies(['']);
     }
-    setDialogOpen(true);
+    setShowDialog(true);
   };
 
-  const resetForm = () => {
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setEditingGoal(null);
     setTargetCGPA('');
     setDeadline('');
     setStrategies(['']);
-  };
-
-  const handleSubmit = () => {
-    const currentUser = mockStorage.currentUser;
-    if (!currentUser) return;
-
-    const userId = currentUser.id;
-    const goalData = {
-      userId,
-      targetCGPA: parseFloat(targetCGPA),
-      deadline,
-      strategies: strategies.filter(s => s.trim() !== ''),
-    };
-
-    if (editingGoal) {
-      const updated = mockStorage.academicGoals.update(editingGoal.id, goalData);
-      setGoals(prev => prev.map(g => g.id === updated.id ? updated : g));
-    } else {
-      const created = mockStorage.academicGoals.create(goalData);
-      setGoals(prev => [...prev, created]);
-    }
-
-    setDialogOpen(false);
-    resetForm();
   };
 
   const handleAddStrategy = () => {
@@ -121,173 +119,184 @@ export const GoalTracker: React.FC = () => {
     setStrategies(strategies.filter((_, i) => i !== index));
   };
 
-  const getProgressColor = (goal: AcademicGoal) => {
-    const progress = (currentCGPA / goal.targetCGPA) * 100;
-    if (progress >= 100) return 'success';
-    if (progress >= 75) return 'info';
-    if (progress >= 50) return 'warning';
-    return 'error';
-  };
-
-  const calculateProgress = (goal: AcademicGoal) => {
-    return Math.min((currentCGPA / goal.targetCGPA) * 100, 100);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'primary';
-      case 'achieved': return 'success';
-      case 'missed': return 'error';
-      default: return 'default';
-    }
-  };
-
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
     );
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Academic Goals</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-800">Academic Goals</h2>
+        <button
+          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
           onClick={() => handleOpenDialog()}
         >
-          New Goal
-        </Button>
-      </Box>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Goal
+        </button>
+      </div>
 
-      <Grid container spacing={3}>
-        {goals.map((goal) => (
-          <Grid item xs={12} md={6} key={goal.id}>
-            <Card>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6">
-                    Target CGPA: {goal.targetCGPA}
-                  </Typography>
-                  <Box>
-                    <IconButton size="small" onClick={() => handleOpenDialog(goal)}>
-                      <EditIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
+      <div className="grid gap-6">
+        {goals.map(goal => (
+          <div key={goal.id} className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-semibold">
+                  Target CGPA: {goal.targetCGPA}
+                </h3>
+                <p className="text-gray-600">
+                  Current CGPA: {goal.currentCGPA}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="p-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => handleOpenDialog(goal)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  className="p-2 text-gray-600 hover:text-red-600"
+                  onClick={() => handleDeleteGoal(goal.id)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-                <Box my={2}>
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    Progress
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={calculateProgress(goal)}
-                    color={getProgressColor(goal)}
-                    sx={{ height: 10, borderRadius: 5 }}
-                  />
-                  <Box display="flex" justifyContent="space-between" mt={1}>
-                    <Typography variant="body2">Current: {currentCGPA}</Typography>
-                    <Typography variant="body2">Target: {goal.targetCGPA}</Typography>
-                  </Box>
-                </Box>
+            <div className="mb-4">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Progress</span>
+                <span>{goal.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-indigo-600 h-2 rounded-full transition-all"
+                  style={{ width: `${goal.progress}%` }}
+                ></div>
+              </div>
+            </div>
 
-                <Box mb={2}>
-                  <Chip
-                    label={`Status: ${goal.status}`}
-                    color={getStatusColor(goal.status)}
-                    size="small"
-                  />
-                  <Typography variant="body2" color="textSecondary" mt={1}>
-                    Deadline: {new Date(goal.deadline).toLocaleDateString()}
-                  </Typography>
-                </Box>
+            <div className="mb-4">
+              <p className="text-gray-600">
+                Deadline: {new Date(goal.deadline).toLocaleDateString()}
+              </p>
+              <p className="text-gray-600">
+                Status: <span className="capitalize">{goal.status}</span>
+              </p>
+            </div>
 
-                {goal.strategies && goal.strategies.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Action Plan:
-                    </Typography>
-                    {goal.strategies.map((strategy, index) => (
-                      <Typography key={index} variant="body2" color="textSecondary">
-                        • {strategy}
-                      </Typography>
-                    ))}
-                  </Box>
-                )}
-
-                <Box mt={2}>
-                  <Typography variant="body2" color="textSecondary">
-                    Required GPA: {goal.requiredGPA.toFixed(2)} per semester
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+            {goal.strategies.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">Strategies:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {goal.strategies.map((strategy, index) => (
+                    <span
+                      key={index}
+                      className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
+                    >
+                      {strategy}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ))}
-      </Grid>
+      </div>
 
-      {/* Goal Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingGoal ? 'Edit Goal' : 'New Academic Goal'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Target CGPA"
-            type="number"
-            value={targetCGPA}
-            onChange={(e) => setTargetCGPA(e.target.value)}
-            margin="normal"
-            inputProps={{ min: 0, max: 5, step: 0.1 }}
-          />
-          <TextField
-            fullWidth
-            type="date"
-            label="Deadline"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-          />
-          
-          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Action Plan
-          </Typography>
-          {strategies.map((strategy, index) => (
-            <Box key={index} display="flex" gap={1} mb={1}>
-              <TextField
-                fullWidth
-                label={`Strategy ${index + 1}`}
-                value={strategy}
-                onChange={(e) => handleStrategyChange(index, e.target.value)}
-              />
-              {strategies.length > 1 && (
-                <IconButton onClick={() => handleRemoveStrategy(index)} color="error">
-                  <DeleteIcon />
-                </IconButton>
-              )}
-            </Box>
-          ))}
-          <Button
-            startIcon={<AddIcon />}
-            onClick={handleAddStrategy}
-            sx={{ mt: 1 }}
-          >
-            Add Strategy
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} color="primary">
-            {editingGoal ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      {showDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">
+              {editingGoal ? 'Edit Goal' : 'Add New Goal'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Target CGPA
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  value={targetCGPA}
+                  onChange={(e) => setTargetCGPA(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Strategies
+                </label>
+                {strategies.map((strategy, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                      value={strategy}
+                      onChange={(e) => handleStrategyChange(index, e.target.value)}
+                      placeholder={`Strategy ${index + 1}`}
+                    />
+                    <button
+                      className="p-2 text-gray-600 hover:text-red-600 disabled:opacity-50"
+                      onClick={() => handleRemoveStrategy(index)}
+                      disabled={strategies.length === 1}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                  onClick={handleAddStrategy}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Strategy
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                onClick={handleCloseDialog}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                onClick={editingGoal ? handleUpdateGoal : handleAddGoal}
+              >
+                {editingGoal ? 'Update' : 'Add'} Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

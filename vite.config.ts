@@ -5,10 +5,18 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   base: './',
+  server: {
+    watch: {
+      usePolling: true,
+    },
+    hmr: {
+      overlay: false
+    }
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
+    sourcemap: 'inline',
     minify: 'esbuild',
     rollupOptions: {
       output: {
@@ -20,5 +28,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
-  },
+    exclude: []
+  }
 });

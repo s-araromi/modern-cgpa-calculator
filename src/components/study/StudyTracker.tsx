@@ -1,28 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import type { StudySession, Course } from '../../types/mock';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Rating,
-  Grid,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import { PlayArrow, Stop, Timer } from '@mui/icons-material';
-import mockStorage from '../../services/mockStorage';
+import { courseAPI } from '../../services/api';
 import { useAuth } from '../auth/AuthContext';
+
+interface StudySession {
+  id: string;
+  courseId: string;
+  topic: string;
+  startTime: string;
+  endTime: string | null;
+  duration: number;
+  efficiency: number;
+  notes: string;
+}
+
+interface Course {
+  id: string;
+  code: string;
+  title: string;
+  units: number;
+  semester: string;
+}
 
 export const StudyTracker = () => {
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
@@ -33,17 +30,23 @@ export const StudyTracker = () => {
   const [notes, setNotes] = useState('');
   const [activeSession, setActiveSession] = useState<StudySession | null>(null);
   const [timer, setTimer] = useState<number>(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [showEndDialog, setShowEndDialog] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
-      const userCourses = mockStorage.courses.filter(c => c.userId === user.id);
-      const userSessions = mockStorage.studyTracking.getAll(user.id);
-      setCourses(userCourses);
-      setStudySessions(userSessions);
+      loadCourses();
     }
   }, [user]);
+
+  const loadCourses = async () => {
+    try {
+      const response = await courseAPI.getAll('current');
+      setCourses(response.data);
+    } catch (error) {
+      console.error('Failed to load courses:', error);
+    }
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,235 +55,233 @@ export const StudyTracker = () => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [activeSession]);
 
-  const handleCreateSession = (sessionData: Omit<StudySession, 'id'>) => {
-    if (user) {
-      const newSession = mockStorage.studyTracking.create({
-        ...sessionData,
-        userId: user.id
-      });
-      setStudySessions(prev => [...prev, newSession]);
-      setActiveSession(newSession);
-      setTimer(0);
-    }
-  };
-
-  const handleUpdateSession = (id: string, data: Partial<StudySession>) => {
-    if (user) {
-      const updatedSession = mockStorage.studyTracking.update(id, data);
-      setStudySessions(prev => prev.map(s => s.id === id ? updatedSession : s));
-    }
-  };
-
-  const handleDeleteSession = (id: string) => {
-    if (user) {
-      mockStorage.studyTracking.delete(id);
-      setStudySessions(prev => prev.filter(s => s.id !== id));
-    }
-  };
-
   const handleStartSession = () => {
-    if (!selectedCourse || !topic) return;
-
-    const sessionData = {
+    if (!selectedCourse) return;
+    
+    const newSession: StudySession = {
+      id: Date.now().toString(),
       courseId: selectedCourse.id,
       topic,
       startTime: new Date().toISOString(),
+      endTime: null,
+      duration: 0,
       efficiency: 0,
-      notes: ''
+      notes: '',
     };
-
-    handleCreateSession(sessionData);
+    
+    setActiveSession(newSession);
+    setTimer(0);
   };
 
-  const handleEndSession = () => {
+  const handleStopSession = () => {
     if (!activeSession) return;
-    setDialogOpen(true);
+    setShowEndDialog(true);
   };
 
-  const handleConfirmEndSession = () => {
+  const handleSaveSession = () => {
     if (!activeSession) return;
 
-    const data = {
+    const endedSession: StudySession = {
+      ...activeSession,
       endTime: new Date().toISOString(),
+      duration: timer,
       efficiency,
-      notes
+      notes,
     };
 
-    handleUpdateSession(activeSession.id, data);
+    setStudySessions(prev => [...prev, endedSession]);
     setActiveSession(null);
+    setTimer(0);
     setEfficiency(0);
     setNotes('');
-    setDialogOpen(false);
+    setShowEndDialog(false);
   };
 
-  const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleCourseSelect = (courseId: string) => {
-    const selected = courses.find(c => c.id === courseId);
-    setSelectedCourse(selected || null);
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" gutterBottom>
-        Study Tracker
-      </Typography>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Study Tracker</h2>
 
-      <Grid container spacing={3}>
-        {/* Study Session Controls */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {activeSession ? 'Active Session' : 'Start New Session'}
-              </Typography>
-
-              {!activeSession ? (
-                <>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Course</InputLabel>
-                    <Select
-                      value={selectedCourse?.id || ''}
-                      onChange={(e) => handleCourseSelect(e.target.value)}
-                      label="Course"
-                    >
-                      <MenuItem value="">Select a course</MenuItem>
-                      {courses.map(course => (
-                        <MenuItem key={course.id} value={course.id}>
-                          {course.code} - {course.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <TextField
-                    fullWidth
-                    margin="normal"
-                    label="Topic"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<PlayArrow />}
-                    onClick={handleStartSession}
-                    disabled={!selectedCourse || !topic}
-                    fullWidth
-                    sx={{ mt: 2 }}
-                  >
-                    Start Session
-                  </Button>
-                </>
-              ) : (
-                <Box>
-                  <Typography variant="h3" align="center" sx={{ my: 3 }}>
-                    {formatTime(timer)}
-                  </Typography>
-
-                  <Typography variant="subtitle1" gutterBottom>
-                    Course: {selectedCourse?.name}
-                  </Typography>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Topic: {activeSession.topic}
-                  </Typography>
-
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<Stop />}
-                    onClick={handleEndSession}
-                    fullWidth
-                    sx={{ mt: 2 }}
-                  >
-                    End Session
-                  </Button>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Study History */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Study Sessions
-              </Typography>
-
-              {studySessions.slice(-5).reverse().map(session => (
-                <Card key={session.id} sx={{ mb: 2, bgcolor: 'background.paper' }}>
-                  <CardContent>
-                    <Typography variant="subtitle1">
-                      {courses.find(c => c.id === session.courseId)?.name}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Topic: {session.topic}
-                    </Typography>
-                    <Box display="flex" alignItems="center" mt={1}>
-                      <Timer sx={{ mr: 1 }} />
-                      <Typography variant="body2">
-                        Duration: {Math.round(session.duration)} minutes
-                      </Typography>
-                    </Box>
-                    {session.efficiency > 0 && (
-                      <Box display="flex" alignItems="center" mt={1}>
-                        <Rating value={session.efficiency / 2} readOnly size="small" />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          Efficiency: {session.efficiency}/10
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Course
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              value={selectedCourse?.id || ''}
+              onChange={(e) => {
+                const course = courses.find(c => c.id === e.target.value);
+                setSelectedCourse(course || null);
+              }}
+              disabled={!!activeSession}
+            >
+              <option value="">Select a course</option>
+              {courses.map(course => (
+                <option key={course.id} value={course.id}>
+                  {course.code} - {course.title}
+                </option>
               ))}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Topic
+            </label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              disabled={!!activeSession}
+              placeholder="What are you studying?"
+            />
+          </div>
+        </div>
 
-      {/* End Session Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-        <DialogTitle>End Study Session</DialogTitle>
-        <DialogContent>
-          <Typography gutterBottom>
-            Rate your study session efficiency:
-          </Typography>
-          <Rating
-            value={efficiency / 2}
-            onChange={(_, newValue) => setEfficiency(newValue ? newValue * 2 : 0)}
-            precision={0.5}
-            max={5}
-          />
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            margin="normal"
-            label="Session Notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConfirmEndSession} color="primary">
-            End Session
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        <div className="flex justify-center">
+          {!activeSession ? (
+            <button
+              className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              onClick={handleStartSession}
+              disabled={!selectedCourse || !topic}
+            >
+              Start Study Session
+            </button>
+          ) : (
+            <div className="text-center">
+              <div className="text-4xl font-mono mb-4">{formatTime(timer)}</div>
+              <button
+                className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700"
+                onClick={handleStopSession}
+              >
+                End Session
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {studySessions.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-xl font-semibold mb-4">Recent Sessions</h3>
+          <div className="space-y-4">
+            {studySessions.map(session => {
+              const course = courses.find(c => c.id === session.courseId);
+              return (
+                <div key={session.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-medium">
+                        {course?.code} - {session.topic}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Duration: {formatTime(session.duration)}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-600 mr-2">Efficiency:</span>
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= session.efficiency
+                                ? 'text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {session.notes && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      Notes: {session.notes}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {showEndDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">End Study Session</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                How efficient was your study session?
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setEfficiency(star)}
+                    className={`p-1 ${
+                      star <= efficiency
+                        ? 'text-yellow-400'
+                        : 'text-gray-300'
+                    }`}
+                  >
+                    <svg
+                      className="w-8 h-8"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Session Notes
+              </label>
+              <textarea
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any notes about this study session?"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                onClick={() => setShowEndDialog(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                onClick={handleSaveSession}
+              >
+                Save Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

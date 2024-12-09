@@ -1,70 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Calculator, ArrowRightLeft, History, MessageSquare, HelpCircle } from 'lucide-react';
-import { AuthProvider } from './components/auth/AuthContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
-import Dashboard from './components/Dashboard';
 import CGPAForm from './components/CGPAForm';
-import ScaleConverter from './components/ScaleConverter';
-import AcademicJourney from './components/AcademicJourney';
-import FeedbackForm from './components/FeedbackForm';
-import HelpDocs from './components/HelpDocs';
-import Tooltip from './components/Tooltip';
-import SemesterList from './components/semester/SemesterList';
+import { AuthProvider } from './components/auth/AuthContext';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/calculator" element={
-            <ProtectedRoute>
-              <SemesterList />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/converter" element={
-            <ProtectedRoute>
-              <ScaleConverter />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/journey" element={
-            <ProtectedRoute>
-              <AcademicJourney />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/feedback" element={
-            <ProtectedRoute>
-              <FeedbackForm />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/help" element={
-            <ProtectedRoute>
-              <HelpDocs />
-            </ProtectedRoute>
-          } />
-
-          {/* Redirect any unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
+            CGPA Calculator
+          </h1>
+          <CGPAForm />
+        </div>
+      </div>
+    </AuthProvider>
   );
 };
 
