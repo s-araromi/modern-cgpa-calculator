@@ -1,11 +1,18 @@
 import { useState, type FC } from 'react';
-import { Trash2, PlusCircle, BookOpen, Target, GraduationCap } from 'lucide-react';
+import { 
+  BookOpen, 
+  ArrowLeftRight, 
+  GraduationCap,
+  Calculator,
+  RefreshCcw
+} from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import ReportExporter from './ReportExporter';
 import ScaleConverter from './ScaleConverter';
 import SemesterList from './semester/SemesterList';
 import { GoalTracker } from './goals/GoalTracker';
 import { StudyTracker } from './study/StudyTracker';
+import AcademicJourney from './AcademicJourney';
 
 interface Course {
   id: string;
@@ -160,7 +167,7 @@ const CGPAForm: FC = () => {
         </div>
         <p className="text-gray-600">From Grades to Greatness...</p>
         <p className="text-gray-600">
-          Calculate, convert, and track your academic performance
+          Calculate and convert your CGPA, track your academic performance
         </p>
       </div>
 
@@ -170,38 +177,40 @@ const CGPAForm: FC = () => {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
             activeTab === 'calculator'
               ? 'bg-indigo-600 text-white'
-              : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <BookOpen className="w-5 h-5" />
-          Calculator
+          <Calculator className="w-5 h-5" />
+          CGPA Calculator
         </button>
         <button
           onClick={() => setActiveTab('converter')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
             activeTab === 'converter'
               ? 'bg-indigo-600 text-white'
-              : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          CGPA Converter
+          <RefreshCcw className="w-5 h-5" />
+          Converter
         </button>
         <button
           onClick={() => setActiveTab('semester')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
             activeTab === 'semester'
               ? 'bg-indigo-600 text-white'
-              : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          Semesters
+          <GraduationCap className="w-5 h-5" />
+          Academic Journey
         </button>
         <button
           onClick={() => setActiveTab('goals')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
             activeTab === 'goals'
               ? 'bg-indigo-600 text-white'
-              : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
           <Target className="w-5 h-5" />
@@ -212,7 +221,7 @@ const CGPAForm: FC = () => {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
             activeTab === 'study'
               ? 'bg-indigo-600 text-white'
-              : 'bg-white/50 hover:bg-white/80 text-gray-700'
+              : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
           Study Tracker
@@ -645,7 +654,7 @@ const CGPAForm: FC = () => {
         ) : activeTab === 'converter' ? (
           <ScaleConverter />
         ) : activeTab === 'semester' ? (
-          <SemesterList />
+          <AcademicJourney />
         ) : activeTab === 'goals' ? (
           <GoalTracker />
         ) : (
@@ -656,7 +665,7 @@ const CGPAForm: FC = () => {
       <div className="text-center text-sm text-gray-600">
         Designed and developed by{' '}
         <a 
-          href="https://github.com/sulaimansuzy" 
+          href="https://github.com/s-araromi" 
           target="_blank" 
           rel="noopener noreferrer"
           className="text-indigo-600 hover:text-indigo-800 font-medium"
