@@ -4,7 +4,8 @@ import {
   ArrowLeftRight, 
   GraduationCap,
   Calculator,
-  RefreshCcw
+  RefreshCcw,
+  Target
 } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import ReportExporter from './ReportExporter';
