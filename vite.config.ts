@@ -1,33 +1,46 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   server: {
-    watch: {
-      usePolling: true,
-    },
+    port: 5173,
+    strictPort: true,
     hmr: {
-      overlay: false
+      protocol: 'ws',
+      host: 'localhost'
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@emotion/react',
+      '@supabase/supabase-js',
+      'lucide-react'
+    ],
+    force: true,
+    esbuildOptions: {
+      target: 'es2020'
     }
   },
   build: {
+    target: 'es2020',
     outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: 'inline',
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-        },
-      },
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: []
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
   }
 });

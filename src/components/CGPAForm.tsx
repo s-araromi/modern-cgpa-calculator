@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, type FC, useEffect } from 'react';
 import { 
   BookOpen, 
   ArrowLeftRight, 
@@ -16,6 +16,8 @@ import SemesterList from './semester/SemesterList';
 import AcademicJourney from './AcademicJourney';
 import { GoalTracker } from './goals/GoalTracker';
 import { StudyTracker } from './study/StudyTracker';
+import { useAuth } from './auth/AuthContext';
+import { supabase } from '../config/supabase';
 
 interface Course {
   id: string;
@@ -24,12 +26,21 @@ interface Course {
   credits: number;
 }
 
+interface CGPARecord {
+  id?: number;
+  semester: number;
+  gpa: number;
+  total_credits: number;
+  courses: Course[];
+}
+
 type GradeScale = '4.0' | '5.0' | '7.0';
 type GradePoints = Record<GradeScale, Record<string, number>>;
 
 type ActiveTab = 'CGPA calculator' | 'CGPA converter' | 'semester' | 'goals' | 'study';
 
 const CGPAForm: FC = () => {
+  const { user } = useAuth();
   const [scale, setScale] = useState<GradeScale>('4.0');
   const [courses, setCourses] = useState<Course[]>([]);
   const [cgpa, setCGPA] = useState<number | null>(null);
@@ -37,6 +48,9 @@ const CGPAForm: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('CGPA calculator');
+  const [savedRecords, setSavedRecords] = useState<CGPARecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const gradePoints: GradePoints = {
     '4.0': {
@@ -53,7 +67,7 @@ const CGPAForm: FC = () => {
       'C': 3.0,  // 50-59%
       'D': 2.0,  // 45-49%
       'E': 1.0,  // 40-44%
-      'F': 0.0   // 0-39%
+      'F': 0.0   // Below 40%
     },
     '7.0': {
       'A': 7.0,  // 70-100%
@@ -63,13 +77,35 @@ const CGPAForm: FC = () => {
       'C': 3.0,  // 50-54%
       'D': 2.0,  // 45-49%
       'E': 1.0,  // 40-44%
-      'F': 0.0   // 0-39%
+      'F': 0.0   // Below 40%
+    }
+  };
+
+  // Fetch saved academic records when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      fetchCGPARecords();
+    }
+  }, [user]);
+
+  const fetchCGPARecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cgpa_records')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('semester', { ascending: true });
+
+      if (error) throw error;
+      setSavedRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching CGPA records:', error);
     }
   };
 
   const addCourse = () => {
     const newCourse: Course = {
-      id: Date.now().toString(),
+      id: Math.random().toString(36).substr(2, 9),
       name: '',
       grade: '',
       credits: 0
@@ -77,17 +113,18 @@ const CGPAForm: FC = () => {
     setCourses([...courses, newCourse]);
   };
 
-  const removeCourse = (id: string) => {
-    setCourses(courses.filter(course => course.id !== id));
+  const handleCourseChange = (index: number, field: keyof Course, value: string | number) => {
+    const updatedCourses = [...courses];
+    updatedCourses[index] = {
+      ...updatedCourses[index],
+      [field]: value
+    };
+    setCourses(updatedCourses);
   };
 
-  const updateCourse = (id: string, field: keyof Course, value: string | number) => {
-    setCourses(courses.map(course => {
-      if (course.id === id) {
-        return { ...course, [field]: value };
-      }
-      return course;
-    }));
+  const removeCourse = (index: number) => {
+    const newCourses = courses.filter((_, i) => i !== index);
+    setCourses(newCourses);
   };
 
   const calculateCGPA = () => {
@@ -136,6 +173,75 @@ const CGPAForm: FC = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Validate courses
+      if (courses.length === 0) {
+        throw new Error('Please add at least one course');
+      }
+
+      const invalidCourses = courses.filter(
+        course => !course.name || !course.grade || !course.credits
+      );
+
+      if (invalidCourses.length > 0) {
+        throw new Error('Please fill in all course details');
+      }
+
+      const gpa = calculateGPA(courses);
+      const total_credits = courses.reduce((sum, course) => sum + course.credits, 0);
+
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('cgpa_records')
+        .insert({
+          user_id: user?.id,
+          semester: 1,
+          gpa,
+          total_credits,
+          courses: JSON.stringify(courses)
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setSavedRecords([...savedRecords, data]);
+      setSuccess('CGPA calculation saved successfully!');
+
+      // Reset form
+      setCourses([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateGPA = (courses: Course[]): number => {
+    const gradePoints: { [key: string]: number } = {
+      'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
+    };
+
+    let totalPoints = 0;
+    let totalCredits = 0;
+
+    courses.forEach(course => {
+      if (course.grade && course.credits) {
+        totalPoints += gradePoints[course.grade] * course.credits;
+        totalCredits += course.credits;
+      }
+    });
+
+    return totalCredits === 0 ? 0 : Number((totalPoints / totalCredits).toFixed(2));
+  };
+
   const getCGPAClassification = (cgpa: number, scale: GradeScale): string => {
     if (scale === '4.0') {
       if (cgpa >= 3.5) return 'First Class Honours';
@@ -161,22 +267,69 @@ const CGPAForm: FC = () => {
     return '';
   };
 
+  const renderCourseInputs = () => {
+    return courses.map((course, index) => (
+      <div key={course.id} className="flex flex-wrap gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="Course Name"
+          value={course.name}
+          onChange={(e) => handleCourseChange(index, 'name', e.target.value)}
+          className="flex-1 p-2 border rounded"
+        />
+        <select
+          value={course.grade}
+          onChange={(e) => handleCourseChange(index, 'grade', e.target.value)}
+          className="w-24 p-2 border rounded"
+        >
+          <option value="">Grade</option>
+          {Object.keys(gradePoints[scale]).map(grade => (
+            <option key={grade} value={grade}>{grade}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          placeholder="Credits"
+          value={course.credits || ''}
+          onChange={(e) => handleCourseChange(index, 'credits', parseInt(e.target.value) || 0)}
+          className="w-24 p-2 border rounded"
+          min="0"
+          max="6"
+        />
+        <button
+          onClick={() => removeCourse(index)}
+          className="p-2 text-red-500 hover:bg-red-100 rounded"
+        >
+          <Trash2 size={20} />
+        </button>
+      </div>
+    ));
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="text-center space-y-4">
-        <div className="flex flex-col items-center justify-center gap-3">
-          <div className="flex items-center justify-center gap-3">
-            <GraduationCap className="w-12 h-12 text-indigo-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
-              GRADIENT
-            </h1>
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      {/* Gradient Logo */}
+      <div className="text-center mb-8 flex flex-col items-center">
+        <div className="flex items-center justify-center space-x-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-700 
+            rounded-full flex items-center justify-center shadow-lg">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              className="fill-white w-10 h-10"
+            >
+              <path d="M12 3L1 9l11 6 9-4.9V17h2V9z"/>
+              <path d="M2.24 9.99L12 15.48l9.77-5.49-1.54-.84L12 13.06 3.79 9.15z"/>
+              <path d="M12 16.48L4.24 11.99 2.24 13.01 12 18.52l9.77-5.51-2-1.02z"/>
+            </svg>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-800">CGPA Calculator and Converter</h2>
+          <h1 className="text-5xl font-extrabold bg-clip-text text-transparent 
+            bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-700 
+            mb-2">Gradient</h1>
         </div>
-        <p className="text-gray-600">From Grades to Greatness...</p>
-        <p className="text-gray-600">
-          Calculate and convert your CGPA, track your academic performance
-        </p>
+        <h2 className="text-2xl font-semibold text-gray-700">
+          CGPA Calculator and Converter
+        </h2>
       </div>
 
       <div className="flex space-x-4 justify-center">
@@ -454,75 +607,7 @@ const CGPAForm: FC = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="font-semibold">Course Code</div>
-                <div className="font-semibold">Course Unit</div>
-                <div className="font-semibold">Grade</div>
-              </div>
-              
-              {courses.map((course) => (
-                <div key={course.id} className="grid grid-cols-3 gap-4">
-                  <input
-                    type="text"
-                    value={course.name}
-                    onChange={(e) => updateCourse(course.id, 'name', e.target.value)}
-                    placeholder="Course Code"
-                    className="p-2 border rounded-lg"
-                  />
-                  <input
-                    type="number"
-                    value={course.credits || ''}
-                    onChange={(e) => updateCourse(course.id, 'credits', Number(e.target.value))}
-                    placeholder="Units"
-                    className="p-2 border rounded-lg"
-                  />
-                  <select
-                    value={course.grade}
-                    onChange={(e) => updateCourse(course.id, 'grade', e.target.value)}
-                    className="p-2 border rounded-lg"
-                  >
-                    <option value="">Select Grade</option>
-                    {scale === '4.0' && (
-                      <>
-                        <option value="A">A (70% and above)</option>
-                        <option value="B">B (60-69%)</option>
-                        <option value="C">C (50-59%)</option>
-                        <option value="D">D (45-49%)</option>
-                        <option value="E">E (40-44%)</option>
-                        <option value="F">F (Below 40%)</option>
-                      </>
-                    )}
-                    {scale === '5.0' && (
-                      <>
-                        <option value="A">A (70-100%)</option>
-                        <option value="B">B (60-69%)</option>
-                        <option value="C">C (50-59%)</option>
-                        <option value="D">D (45-49%)</option>
-                        <option value="E">E (40-44%)</option>
-                        <option value="F">F (0-39%)</option>
-                      </>
-                    )}
-                    {scale === '7.0' && (
-                      <>
-                        <option value="A">A (70-100%)</option>
-                        <option value="B+">B+ (65-69%)</option>
-                        <option value="B">B (60-64%)</option>
-                        <option value="C+">C+ (55-59%)</option>
-                        <option value="C">C (50-54%)</option>
-                        <option value="D">D (45-49%)</option>
-                        <option value="E">E (40-44%)</option>
-                        <option value="F">F (0-39%)</option>
-                      </>
-                    )}
-                  </select>
-                  <button
-                    onClick={() => removeCourse(course.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
+              {renderCourseInputs()}
             </div>
 
             <div className="flex space-x-4">
@@ -668,6 +753,69 @@ const CGPAForm: FC = () => {
         ) : (
           <StudyTracker />
         )}
+      </div>
+
+
+
+      {user ? (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h3 className="text-xl font-bold mb-2">Saved Academic Records</h3>
+          <div>
+            <label className="block text-lg font-large text-gray-700">
+              Semester
+            </label>
+            <input
+              type="number"
+              value={1}
+              min="1"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+
+          {/* Courses */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium">Courses</h2>
+              <button
+                type="button"
+                onClick={addCourse}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Add Course
+              </button>
+            </div>
+
+            {renderCourseInputs()}
+          </div>
+
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                loading
+                  ? 'bg-indigo-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              }`}
+            >
+              {loading ? 'Saving...' : 'Calculate and Save CGPA'}
+            </button>
+          </div>
+        </form>
+
+      ) : (
+        <p className="text-red-500">Please log in to save your academic records</p>
+      )}
+
+      <div className="mt-4">
+                {savedRecords.map(record => (
+          <div key={record.id} className="border p-2 mb-2">
+            <p>Semester GPA: {record.gpa}</p>
+            <p>Academic Year: {record.semester}</p>
+            <p>Courses: {record.courses.length}</p>
+          </div>
+        ))}
       </div>
 
       <div className="text-center text-sm text-gray-600">

@@ -58,7 +58,7 @@ const AcademicJourney = () => {
     if (!content) return;
 
     const opt = {
-      margin: 1,
+      margin: [1],
       filename: 'academic-journey.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },

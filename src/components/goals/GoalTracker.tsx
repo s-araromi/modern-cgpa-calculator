@@ -1,302 +1,196 @@
 import React, { useState, useEffect } from 'react';
-import { mockStorage } from '../../services/mockStorage';
-import { AcademicGoal } from '../../types/mock';
+import { Trophy, Target, TrendingUp, Trash2, PlusCircle } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import { supabase } from '../../config/supabase';
+
+interface Goal {
+  id?: number;
+  user_id: string;
+  title: string;
+  target_gpa: number;
+  deadline: string;
+  created_at?: string;
+}
 
 export const GoalTracker: React.FC = () => {
-  const [goals, setGoals] = useState<AcademicGoal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<AcademicGoal | null>(null);
+  const { user } = useAuth();
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    target_gpa: 0,
+    deadline: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Form states
-  const [targetCGPA, setTargetCGPA] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [strategies, setStrategies] = useState<string[]>(['']);
-
+  // Fetch goals when component mounts or user changes
   useEffect(() => {
-    loadGoals();
-  }, []);
+    const fetchGoals = async () => {
+      if (!user) return;
 
-  const loadGoals = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('goals')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        setGoals(data || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching goals:', err);
+        setError('Failed to fetch goals. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGoals();
+  }, [user]);
+
+  const addGoal = async () => {
+    if (!user) {
+      setError('Please log in to create goals');
+      return;
+    }
+
+    if (!newGoal.title || newGoal.target_gpa <= 0) {
+      setError('Please provide a valid goal title and target GPA');
+      return;
+    }
+
     try {
-      const user = mockStorage.currentUser || { id: '1' }; // Use default user if none exists
-      const userGoals = mockStorage.academicGoals.getAll(user.id);
-      setGoals(userGoals);
-    } catch (error) {
-      console.error('Failed to load goals:', error);
+      setIsLoading(true);
+      const goalToAdd: Goal = {
+        user_id: user.id,
+        title: newGoal.title,
+        target_gpa: newGoal.target_gpa,
+        deadline: newGoal.deadline
+      };
+
+      const { data, error } = await supabase
+        .from('goals')
+        .insert(goalToAdd)
+        .select();
+
+      if (error) throw error;
+
+      setGoals([...goals, data[0]]);
+      setNewGoal({ title: '', target_gpa: 0, deadline: '' });
+      setError(null);
+    } catch (err) {
+      console.error('Error adding goal:', err);
+      setError('Failed to add goal. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleAddGoal = async () => {
+  const deleteGoal = async (goalId: number) => {
     try {
-      const user = mockStorage.currentUser || { id: '1' }; // Use default user if none exists
-      const newGoal = {
-        id: Date.now().toString(),
-        userId: user.id,
-        targetCGPA: parseFloat(targetCGPA),
-        currentCGPA: 0,
-        deadline,
-        strategies: strategies.filter(s => s.trim() !== ''),
-        progress: 0,
-        status: 'pending' as const,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', goalId);
 
-      mockStorage.academicGoals.add(newGoal);
-      await loadGoals();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Failed to create goal:', error);
+      if (error) throw error;
+
+      setGoals(goals.filter(goal => goal.id !== goalId));
+    } catch (err) {
+      console.error('Error deleting goal:', err);
+      setError('Failed to delete goal. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleUpdateGoal = async () => {
-    if (!editingGoal) return;
-
-    try {
-      const updatedGoal = {
-        ...editingGoal,
-        targetCGPA: parseFloat(targetCGPA),
-        deadline,
-        strategies: strategies.filter(s => s.trim() !== ''),
-        updatedAt: new Date().toISOString(),
-      };
-
-      mockStorage.academicGoals.update(editingGoal.id, updatedGoal);
-      await loadGoals();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Failed to update goal:', error);
-    }
-  };
-
-  const handleDeleteGoal = async (goalId: string) => {
-    try {
-      mockStorage.academicGoals.delete(goalId);
-      await loadGoals();
-    } catch (error) {
-      console.error('Failed to delete goal:', error);
-    }
-  };
-
-  const handleOpenDialog = (goal?: AcademicGoal) => {
-    if (goal) {
-      setEditingGoal(goal);
-      setTargetCGPA(goal.targetCGPA.toString());
-      setDeadline(goal.deadline);
-      setStrategies(goal.strategies);
-    } else {
-      setEditingGoal(null);
-      setTargetCGPA('');
-      setDeadline('');
-      setStrategies(['']);
-    }
-    setShowDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setShowDialog(false);
-    setEditingGoal(null);
-    setTargetCGPA('');
-    setDeadline('');
-    setStrategies(['']);
-  };
-
-  const handleAddStrategy = () => {
-    setStrategies([...strategies, '']);
-  };
-
-  const handleStrategyChange = (index: number, value: string) => {
-    const newStrategies = [...strategies];
-    newStrategies[index] = value;
-    setStrategies(newStrategies);
-  };
-
-  const handleRemoveStrategy = (index: number) => {
-    setStrategies(strategies.filter((_, i) => i !== index));
-  };
-
-  if (loading) {
+  if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="text-center text-red-500 mt-4">
+        Please log in to manage your goals
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">Academic Goals</h2>
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4 flex items-center">
+        <Target className="mr-2" /> Goal Tracker
+      </h2>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          {error}
+        </div>
+      )}
+
+      {/* Goal Input Form */}
+      <div className="mb-4 flex space-x-2">
+        <input
+          type="text"
+          placeholder="Goal Title"
+          value={newGoal.title}
+          onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
+          className="flex-grow p-2 border rounded"
+        />
+        <input
+          type="number"
+          placeholder="Target GPA"
+          value={newGoal.target_gpa}
+          onChange={(e) => setNewGoal({...newGoal, target_gpa: parseFloat(e.target.value)})}
+          className="w-24 p-2 border rounded"
+          step="0.1"
+          min="0"
+          max="5.0"
+        />
+        <input
+          type="date"
+          value={newGoal.deadline}
+          onChange={(e) => setNewGoal({...newGoal, deadline: e.target.value})}
+          className="w-32 p-2 border rounded"
+        />
         <button
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
-          onClick={() => handleOpenDialog()}
+          onClick={addGoal}
+          disabled={isLoading}
+          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 flex items-center"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Goal
+          <PlusCircle className="mr-1" /> Add Goal
         </button>
       </div>
 
-      <div className="grid gap-6">
-        {goals.map(goal => (
-          <div key={goal.id} className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-semibold">
-                  Target CGPA: {goal.targetCGPA}
-                </h3>
-                <p className="text-gray-600">
-                  Current CGPA: {goal.currentCGPA}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="p-2 text-gray-600 hover:text-indigo-600"
-                  onClick={() => handleOpenDialog(goal)}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  className="p-2 text-gray-600 hover:text-red-600"
-                  onClick={() => handleDeleteGoal(goal.id)}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+      {/* Goals List */}
+      <div className="space-y-2">
+        {goals.map((goal) => (
+          <div 
+            key={goal.id} 
+            className={`flex items-center justify-between p-3 rounded ${
+              goal.status === 'Achieved' 
+                ? 'bg-green-100 border-green-200' 
+                : 'bg-blue-100 border-blue-200'
+            }`}
+          >
+            <div>
+              <h3 className="font-semibold">{goal.title}</h3>
+              <p>Target GPA: {goal.target_gpa}</p>
+              <p>Status: In Progress</p>
+              {goal.deadline && (
+                <p>Deadline: {new Date(goal.deadline).toLocaleDateString()}</p>
+              )}
             </div>
-
-            <div className="mb-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
-                <span>Progress</span>
-                <span>{goal.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-indigo-600 h-2 rounded-full transition-all"
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
-              </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => deleteGoal(goal.id)}
+                disabled={isLoading}
+                className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+              >
+                <Trash2 size={20} />
+              </button>
             </div>
-
-            <div className="mb-4">
-              <p className="text-gray-600">
-                Deadline: {new Date(goal.deadline).toLocaleDateString()}
-              </p>
-              <p className="text-gray-600">
-                Status: <span className="capitalize">{goal.status}</span>
-              </p>
-            </div>
-
-            {goal.strategies.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-2">Strategies:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {goal.strategies.map((strategy, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
-                    >
-                      {strategy}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>
-
-      {showDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">
-              {editingGoal ? 'Edit Goal' : 'Add New Goal'}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Target CGPA
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  value={targetCGPA}
-                  onChange={(e) => setTargetCGPA(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Strategies
-                </label>
-                {strategies.map((strategy, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      className="flex-1 border border-gray-300 rounded-md px-3 py-2"
-                      value={strategy}
-                      onChange={(e) => handleStrategyChange(index, e.target.value)}
-                      placeholder={`Strategy ${index + 1}`}
-                    />
-                    <button
-                      className="p-2 text-gray-600 hover:text-red-600 disabled:opacity-50"
-                      onClick={() => handleRemoveStrategy(index)}
-                      disabled={strategies.length === 1}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-                <button
-                  className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                  onClick={handleAddStrategy}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Strategy
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-                onClick={handleCloseDialog}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                onClick={editingGoal ? handleUpdateGoal : handleAddGoal}
-              >
-                {editingGoal ? 'Update' : 'Add'} Goal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
