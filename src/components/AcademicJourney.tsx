@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Trophy, Star, TrendingUp, Award, Download, BarChart2 } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
+import * as html2pdf from 'html2pdf.js';
 
 interface Semester {
   id: string;

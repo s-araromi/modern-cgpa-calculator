@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
-      }
+      },
+      dedupe: ['html2pdf.js']
     },
     server: {
       port: 5173,
@@ -27,6 +28,24 @@ export default defineConfig(({ mode }) => {
         'Access-Control-Allow-Origin': '*'
       }
     },
+    build: {
+      target: 'es2020',
+      outDir: 'dist',
+      sourcemap: true,
+      commonjsOptions: {
+        transformMixedEsModules: true
+      },
+      rollupOptions: {
+        external: ['html2pdf.js'],
+        output: {
+          manualChunks(id) {
+            if (id.includes('html2pdf.js')) {
+              return 'html2pdf';
+            }
+          }
+        }
+      }
+    },
     optimizeDeps: {
       include: [
         'react',
@@ -34,19 +53,12 @@ export default defineConfig(({ mode }) => {
         'react-router-dom',
         '@emotion/react',
         '@supabase/supabase-js',
-        'lucide-react'
+        'lucide-react',
+        'html2pdf.js'
       ],
       force: true,
       esbuildOptions: {
         target: 'es2020'
-      }
-    },
-    build: {
-      target: 'es2020',
-      outDir: 'dist',
-      sourcemap: true,
-      commonjsOptions: {
-        transformMixedEsModules: true
       }
     }
   };
