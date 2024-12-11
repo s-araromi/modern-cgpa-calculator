@@ -7,7 +7,7 @@ interface AuthContextType {
   user: (User & { role?: string }) | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   error: string | null;
 }
@@ -18,6 +18,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<(User & { role?: string }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper function to fetch user profile
+  const fetchUserProfile = async (authUser: User) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Combine user and profile data
+      setUser({
+        ...authUser,
+        role: profileData?.role
+      });
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setUser(authUser);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signUp = async (email: string, password: string) => {
     try {
@@ -32,15 +56,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (signInError) throw signInError;
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      if (data.user) {
+        await fetchUserProfile(data.user);
+        return true;
+      }
+
+      return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during sign in');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign in';
+      setError(errorMessage);
+      setLoading(false);
+      return false;
     }
   };
 
@@ -48,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error: signOutError } = await supabase.auth.signOut();
       if (signOutError) throw signOutError;
+      setUser(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign out');
     }
@@ -102,25 +143,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
-
-  const fetchUserProfile = async (authUser: User) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authUser.id)
-        .single();
-
-      if (error) throw error;
-
-      setUser({ ...authUser, role: profile?.role || 'user' });
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      setUser({ ...authUser, role: 'user' });
-      setLoading(false);
-    }
-  };
 
   return (
     <AuthContext.Provider value={contextValue}>

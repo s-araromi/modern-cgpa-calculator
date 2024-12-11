@@ -8,7 +8,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, error: authError } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,8 +16,12 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      navigate('/');
+      const success = await signIn(email, password);
+      if (success) {
+        navigate('/');
+      } else {
+        setError(authError || 'Failed to sign in');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     } finally {
@@ -56,9 +60,9 @@ const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
+          {(error || authError) && (
             <div className="bg-red-500 bg-opacity-20 text-white p-4 rounded-lg text-center">
-              {error}
+              {error || authError}
             </div>
           )}
 
@@ -100,24 +104,28 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg 
-                hover:bg-purple-700 transition duration-300 
-                focus:outline-none focus:ring-2 focus:ring-purple-500 
-                disabled:opacity-50"
+              className={`w-full py-3 px-4 rounded-md text-white font-semibold transition-all duration-300 
+              ${loading 
+                ? 'bg-purple-400 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50'
+              }`}
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
-        </form>
 
-        <div className="mt-6 text-center">
-          <Link 
-            to="/register" 
-            className="text-sm text-white hover:text-gray-200 underline"
-          >
-            Don't have an account? Register/sign up
-          </Link>
-        </div>
+          <div className="text-center mt-4">
+            <p className="text-white text-sm">
+              Don't have an account?{' '}
+              <Link 
+                to="/signup" 
+                className="text-blue-300 hover:text-blue-200 underline transition duration-300"
+              >
+                Sign Up
+              </Link>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );
