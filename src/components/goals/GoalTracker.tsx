@@ -4,20 +4,28 @@ import { useAuth } from '../auth/AuthContext';
 import { supabase } from '../../config/supabase';
 
 interface Goal {
-  id?: number;
+  id: number;
   user_id: string;
   title: string;
-  target_gpa: number;
+  targetGPA: number;
   deadline: string;
   created_at?: string;
+  status?: 'pending' | 'completed' | 'failed';
+  progress?: number;
+}
+
+interface NewGoal {
+  title: string;
+  targetGPA: number;
+  deadline: string;
 }
 
 export const GoalTracker: React.FC = () => {
   const { user } = useAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState({
+  const [newGoal, setNewGoal] = useState<NewGoal>({
     title: '',
-    target_gpa: 0,
+    targetGPA: 0,
     deadline: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -55,29 +63,28 @@ export const GoalTracker: React.FC = () => {
       return;
     }
 
-    if (!newGoal.title || newGoal.target_gpa <= 0) {
+    if (!newGoal.title || newGoal.targetGPA <= 0) {
       setError('Please provide a valid goal title and target GPA');
       return;
     }
 
     try {
       setIsLoading(true);
-      const goalToAdd: Goal = {
-        user_id: user.id,
-        title: newGoal.title,
-        target_gpa: newGoal.target_gpa,
-        deadline: newGoal.deadline
-      };
-
       const { data, error } = await supabase
         .from('goals')
-        .insert(goalToAdd)
+        .insert([{
+          user_id: user.id,
+          title: newGoal.title,
+          targetGPA: newGoal.targetGPA,
+          deadline: newGoal.deadline,
+          status: 'pending'
+        } as Partial<Goal>])
         .select();
 
       if (error) throw error;
 
       setGoals([...goals, data[0]]);
-      setNewGoal({ title: '', target_gpa: 0, deadline: '' });
+      setNewGoal({ title: '', targetGPA: 0, deadline: '' });
       setError(null);
     } catch (err) {
       console.error('Error adding goal:', err);
@@ -104,6 +111,14 @@ export const GoalTracker: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleProgressUpdate = (goalId: number, progress: number) => {
+    if (typeof progress === 'undefined') return;
+    
+    setGoals(goals.map(goal => 
+      goal.id === goalId ? { ...goal, progress } : goal
+    ));
   };
 
   if (!user) {
@@ -138,8 +153,8 @@ export const GoalTracker: React.FC = () => {
         <input
           type="number"
           placeholder="Target GPA"
-          value={newGoal.target_gpa}
-          onChange={(e) => setNewGoal({...newGoal, target_gpa: parseFloat(e.target.value)})}
+          value={newGoal.targetGPA}
+          onChange={(e) => setNewGoal({...newGoal, targetGPA: parseFloat(e.target.value)})}
           className="w-24 p-2 border rounded"
           step="0.1"
           min="0"
@@ -166,17 +181,20 @@ export const GoalTracker: React.FC = () => {
           <div 
             key={goal.id} 
             className={`flex items-center justify-between p-3 rounded ${
-              goal.status === 'Achieved' 
+              goal.status === 'completed' 
                 ? 'bg-green-100 border-green-200' 
                 : 'bg-blue-100 border-blue-200'
             }`}
           >
             <div>
               <h3 className="font-semibold">{goal.title}</h3>
-              <p>Target GPA: {goal.target_gpa}</p>
-              <p>Status: In Progress</p>
+              <p>Target GPA: {goal.targetGPA}</p>
+              <p>Status: {goal.status || 'In Progress'}</p>
               {goal.deadline && (
                 <p>Deadline: {new Date(goal.deadline).toLocaleDateString()}</p>
+              )}
+              {goal.progress !== undefined && (
+                <p>Progress: {goal.progress}%</p>
               )}
             </div>
             <div className="flex space-x-2">

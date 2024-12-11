@@ -55,27 +55,62 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 });
 
-// Mock fetch
-global.fetch = jest.fn(() => 
-  Promise.resolve({
-    json: () => Promise.resolve({}),
-    ok: true,
+interface MockResponse {
+  data?: any;
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+}
+
+interface MockRequest {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  data?: any;
+}
+
+const mockResponses = new Map<string, MockResponse>();
+
+const mockFetch = jest.fn((url: string, options: RequestInit = {}) => {
+  const response = mockResponses.get(url) || {
+    status: 404,
+    statusText: 'Not Found'
+  };
+
+  return Promise.resolve({
+    ...response,
+    json: () => Promise.resolve(response.data),
+    ok: response.status === 200
+  });
+});
+
+global.fetch = mockFetch;
+
+export const mockFetchResponse = (url: string, response: MockResponse) => {
+  mockResponses.set(url, {
     status: 200,
     statusText: 'OK',
-  } as Response)
-);
+    ...response
+  });
+};
 
-// Mock window.matchMedia
+export const clearMockFetchResponses = () => {
+  mockResponses.clear();
+};
+
+// Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
-  })),
+  }),
 });
 
 // Mock IntersectionObserver

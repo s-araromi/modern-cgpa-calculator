@@ -1,8 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Use environment variables with fallback to local Supabase development settings
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wznucutrzwxjeqqnwirj.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6bnVjdXRyend4amVxcW53aXJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM4MzM3MTgsImV4cCI6MjA0OTQwOTcxOH0.c6vhyQjyZ2p-0oFCpi-kA66FTeUzZywtynDxno1TZu0';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables');
+}
 
 // Types for our application
 export interface Profile {
@@ -28,7 +32,7 @@ export interface Course {
 }
 
 // Supabase client initialization with error handling
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
   auth: {
     persistSession: true
   }

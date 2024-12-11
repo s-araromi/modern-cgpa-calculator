@@ -6,12 +6,15 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "buildCommand": "npm run build"
+        "buildCommand": "yarn build"
       }
     }
   ],
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/[^.]+", "dest": "/" }
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
