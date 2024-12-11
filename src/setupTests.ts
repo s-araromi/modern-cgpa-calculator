@@ -1,130 +1,82 @@
 import '@testing-library/jest-dom';
 import { jest } from '@jest/globals';
 
-// Mock TextEncoder/TextDecoder before requiring jsdom
-const { TextEncoder, TextDecoder } = require('util');
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
-
-// Initialize jsdom environment
-const jsdom = require('jsdom');
-const { JSDOM } = jsdom;
-
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'http://localhost',
-  pretendToBeVisual: true,
-  features: {
-    QuerySelector: true,
-  },
-  runScripts: 'dangerously',
-});
-
-// Set up global objects
-const { window } = dom;
-const { document } = window;
-
-Object.defineProperty(global, 'window', { value: window });
-Object.defineProperty(global, 'document', { value: document });
-Object.defineProperty(global, 'navigator', { value: window.navigator });
-Object.defineProperty(global, 'Element', { value: window.Element });
-Object.defineProperty(global, 'HTMLElement', { value: window.HTMLElement });
-Object.defineProperty(global, 'HTMLDivElement', { value: window.HTMLDivElement });
-Object.defineProperty(global, 'getComputedStyle', { value: window.getComputedStyle });
-
-// Mock ResizeObserver
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
-window.ResizeObserver = ResizeObserverMock;
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  length: 0,
-  key: jest.fn(),
-};
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
-});
-
 // Extend global interfaces to avoid type issues
 declare global {
   interface Window {
-    fetchMock?: jest.Mock<
-      Promise<Response>, 
-      [input: RequestInfo | URL, init?: RequestInit]
-    >;
+    fetchMock?: jest.MockedFunction<typeof fetch>;
   }
 }
 
-// Mock Response type to handle different input scenarios
-class MockResponse implements Response {
+// Create a comprehensive mock response wrapper
+class MockResponseWrapper implements Response {
+  private _response: Response;
   private _data: any;
-  private _status: number;
-  private _statusText: string;
-  private _headers: Headers;
 
   constructor(data: any, options: { 
     status?: number, 
     statusText?: string, 
     headers?: Record<string, string> 
   } = {}) {
+    // Create a base Response object
+    const body = new Blob([JSON.stringify(data)]);
     this._data = data;
-    this._status = options.status || 200;
-    this._statusText = options.statusText || 'OK';
-    this._headers = new Headers(options.headers);
+    this._response = new Response(body, {
+      status: options.status || 200,
+      statusText: options.statusText || 'OK',
+      headers: new Headers(options.headers)
+    });
   }
 
-  get status() { return this._status; }
-  get statusText() { return this._statusText; }
-  get ok() { return this._status >= 200 && this._status < 300; }
-  get headers() { return this._headers; }
+  // Delegate most properties and methods to the underlying Response
+  get status() { return this._response.status; }
+  get statusText() { return this._response.statusText; }
+  get ok() { return this._response.ok; }
+  get headers() { return this._response.headers; }
+  get type() { return this._response.type; }
+  get url() { return this._response.url; }
+  get redirected() { return this._response.redirected; }
+  get body() { return this._response.body; }
+  get bodyUsed() { return this._response.bodyUsed; }
 
+  // Implement Response methods
   json() { return Promise.resolve(this._data); }
-  text() { return Promise.resolve(JSON.stringify(this._data)); }
-  blob() { return Promise.resolve(new Blob([JSON.stringify(this._data)])); }
-  arrayBuffer() { return Promise.resolve(new ArrayBuffer(0)); }
-  clone() { return new MockResponse(this._data, { 
-    status: this._status, 
-    statusText: this._statusText, 
-    headers: Object.fromEntries(this._headers) 
-  }); }
+  text() { return this._response.text(); }
+  blob() { return this._response.blob(); }
+  arrayBuffer() { return this._response.arrayBuffer(); }
+  
+  clone(): Response {
+    return new MockResponseWrapper(this._data, {
+      status: this.status,
+      statusText: this.statusText,
+      headers: Object.fromEntries(this.headers)
+    });
+  }
 }
 
-// Custom fetch mock that handles various input types
+// Create a flexible mock fetch implementation
 const createMockFetch = () => {
   const mockResponses = new Map<string, any>();
 
-  const mockFetch = jest.fn(
-    (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      // Convert input to string URL
-      const url = input instanceof Request 
-        ? input.url 
-        : (typeof input === 'string' ? input : input.toString());
+  const mockFetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    // Determine the URL
+    const url = input instanceof Request 
+      ? input.url 
+      : (typeof input === 'string' ? input : input.toString());
 
-      // Get response or use default
-      const responseData = mockResponses.get(url) || { 
-        data: null, 
-        status: 404, 
-        statusText: 'Not Found' 
-      };
+    // Get response or use default
+    const responseData = mockResponses.get(url) || { 
+      data: null, 
+      status: 404, 
+      statusText: 'Not Found' 
+    };
 
-      return Promise.resolve(
-        new MockResponse(responseData.data, {
-          status: responseData.status,
-          statusText: responseData.statusText
-        })
-      );
-    }
-  );
+    // Return a mock response that matches the Response interface
+    return new MockResponseWrapper(responseData.data, {
+      status: responseData.status,
+      statusText: responseData.statusText
+    });
+  }) as jest.MockedFunction<typeof fetch>;
 
   return {
     mockFetch,
@@ -162,22 +114,3 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   }),
 });
-
-// Mock IntersectionObserver
-class MockIntersectionObserver {
-  readonly root: Element | null = null;
-  readonly rootMargin: string = '';
-  readonly thresholds: ReadonlyArray<number> = [];
-
-  constructor() {}
-
-  observe = jest.fn();
-  unobserve = jest.fn();
-  disconnect = jest.fn();
-  takeRecords = jest.fn(() => []);
-}
-
-(window as any).IntersectionObserver = MockIntersectionObserver;
-
-// Increase test timeout
-jest.setTimeout(30000);
