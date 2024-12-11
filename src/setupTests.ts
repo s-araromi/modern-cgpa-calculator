@@ -69,24 +69,46 @@ interface MockRequest {
   data?: any;
 }
 
-const mockResponses = new Map<string, MockResponse>();
+// Extend the global fetch type to include our mock implementation
+declare global {
+  interface Window {
+    fetchMock?: jest.Mock;
+  }
+}
 
-const mockFetch = jest.fn((url: string, options: RequestInit = {}) => {
-  const response = mockResponses.get(url) || {
+const createMockResponse = (response: MockResponse): Response => ({
+  json: () => Promise.resolve(response.data),
+  status: response.status || 200,
+  statusText: response.statusText || 'OK',
+  ok: (response.status || 200) >= 200 && (response.status || 200) < 300,
+  headers: new Headers(response.headers),
+  text: () => Promise.resolve(JSON.stringify(response.data)),
+  blob: () => Promise.resolve(new Blob([JSON.stringify(response.data)])),
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+  clone: () => createMockResponse(response) as Response,
+} as Response);
+
+const mockFetch = jest.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input.toString();
+  const mockResponses = new Map<string, MockResponse>();
+
+  const defaultResponse: MockResponse = {
     status: 404,
-    statusText: 'Not Found'
+    statusText: 'Not Found',
+    data: null
   };
 
-  return Promise.resolve({
-    ...response,
-    json: () => Promise.resolve(response.data),
-    ok: response.status === 200
-  });
+  const response = mockResponses.get(url) || defaultResponse;
+  return Promise.resolve(createMockResponse(response));
 });
 
+// Override global fetch with our mock
 global.fetch = mockFetch;
+global.fetchMock = mockFetch;
 
+// Utility functions for testing
 export const mockFetchResponse = (url: string, response: MockResponse) => {
+  const mockResponses = new Map<string, MockResponse>();
   mockResponses.set(url, {
     status: 200,
     statusText: 'OK',
@@ -95,6 +117,7 @@ export const mockFetchResponse = (url: string, response: MockResponse) => {
 };
 
 export const clearMockFetchResponses = () => {
+  const mockResponses = new Map<string, MockResponse>();
   mockResponses.clear();
 };
 
