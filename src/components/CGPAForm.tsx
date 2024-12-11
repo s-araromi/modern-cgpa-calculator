@@ -1,4 +1,8 @@
-import { useState, type FC, useEffect } from 'react';
+import React, { FC, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
+import { Grade } from 'path-to-grade-definition';
+
 import { 
   BookOpen, 
   ArrowLeftRight, 
@@ -7,20 +11,25 @@ import {
   RefreshCcw,
   Target,
   Trash2,
-  PlusCircle
+  PlusCircle,
+  Calendar,
+  BookOpenCheck
 } from 'lucide-react';
 import CourseImpactAnalysis from './CourseImpactAnalysis';
 import ReportExporter from './ReportExporter';
 import ScaleConverter from './ScaleConverter';
 import SemesterList from './semester/SemesterList';
 import AcademicJourney from './AcademicJourney';
-import { GoalTracker } from './goals/GoalTracker';
-import { StudyTracker } from './study/StudyTracker';
-import { useAuth } from './auth/AuthContext';
+import FeedbackForm  from './FeedbackForm';
+import HelpDocs from './HelpDocs';
 import { supabase } from '../config/supabase';
 
+type Grade = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+
+
+
 interface Course {
-  id: string;
+  id: number;
   name: string;
   grade: string;
   credits: number;
@@ -40,7 +49,8 @@ type GradePoints = Record<GradeScale, Record<string, number>>;
 type ActiveTab = 'CGPA calculator' | 'CGPA converter' | 'semester' | 'goals' | 'study';
 
 const CGPAForm: FC = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [scale, setScale] = useState<GradeScale>('4.0');
   const [courses, setCourses] = useState<Course[]>([]);
   const [cgpa, setCGPA] = useState<number | null>(null);
@@ -81,6 +91,36 @@ const CGPAForm: FC = () => {
     }
   };
 
+  const gradeOptions = Object.keys(gradePoints[scale]);
+
+  const tabItems = [
+    {
+      icon: Calculator,
+      label: 'CGPA calculator',
+      value: 'CGPA calculator'
+    },
+    {
+      icon: RefreshCcw,
+      label: 'CGPA converter',
+      value: 'CGPA converter'
+    },
+    {
+      icon: Calendar,
+      label: 'Academic Journey',
+      value: 'semester'
+    },
+    {
+      icon: Target,
+      label: 'Feedback',
+      value: 'goals'
+    },
+    {
+      icon: BookOpenCheck,
+      label: 'Help Docs',
+      value: 'study'
+    }
+  ];
+
   // Fetch saved academic records when component mounts or user changes
   useEffect(() => {
     if (user) {
@@ -104,13 +144,15 @@ const CGPAForm: FC = () => {
   };
 
   const addCourse = () => {
-    const newCourse: Course = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: '',
-      grade: '',
-      credits: 0
-    };
-    setCourses([...courses, newCourse]);
+    setCourses([
+      ...courses,
+      {
+        id: Date.now(),
+        name: '',
+        credits: 0,
+        grade: '' as Grade,
+      }
+    ]);
   };
 
   const handleCourseChange = (index: number, field: keyof Course, value: string | number) => {
@@ -269,39 +311,81 @@ const CGPAForm: FC = () => {
 
   const renderCourseInputs = () => {
     return courses.map((course, index) => (
-      <div key={course.id} className="flex flex-wrap gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Course Name"
-          value={course.name}
-          onChange={(e) => handleCourseChange(index, 'name', e.target.value)}
-          className="flex-1 p-2 border rounded"
-        />
-        <select
-          value={course.grade}
-          onChange={(e) => handleCourseChange(index, 'grade', e.target.value)}
-          className="w-24 p-2 border rounded"
-        >
-          <option value="">Grade</option>
-          {Object.keys(gradePoints[scale]).map(grade => (
-            <option key={grade} value={grade}>{grade}</option>
-          ))}
-        </select>
-        <input
-          type="number"
-          placeholder="Credits"
-          value={course.credits || ''}
-          onChange={(e) => handleCourseChange(index, 'credits', parseInt(e.target.value) || 0)}
-          className="w-24 p-2 border rounded"
-          min="0"
-          max="6"
-        />
-        <button
-          onClick={() => removeCourse(index)}
-          className="p-2 text-red-500 hover:bg-red-100 rounded"
-        >
-          <Trash2 size={20} />
-        </button>
+      <div key={index} className="grid grid-cols-3 gap-4 items-center">
+        {/* Course Code */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Course Code
+          </label>
+          <input
+            type="text"
+            value={course.name}
+            onChange={(e) => {
+              const newCourses = [...courses];
+              newCourses[index].name = e.target.value;
+              setCourses(newCourses);
+            }}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="e.g. MTH101"
+          />
+        </div>
+
+        {/* Credits */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Course Unit
+          </label>
+          <input
+            type="number"
+            value={course.credits}
+            onChange={(e) => {
+              const newCourses = [...courses];
+              newCourses[index].credits = Number(e.target.value);
+              setCourses(newCourses);
+            }}
+            min="1"
+            max="6"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="Course Unit"
+          />
+        </div>
+
+        {/* Grade */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Grade
+          </label>
+          <select
+            value={course.grade}
+            onChange={(e) => {
+              const newCourses = [...courses];
+              newCourses[index].grade = e.target.value as Grade;
+              setCourses(newCourses);
+            }}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">Select Grade</option>
+            {gradeOptions.map((gradeOption) => (
+              <option key={gradeOption} value={gradeOption}>
+                {gradeOption}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Remove Course Button */}
+        {courses.length > 1 && (
+          <button
+            type="button"
+            onClick={() => {
+              const newCourses = courses.filter((_, i) => i !== index);
+              setCourses(newCourses);
+            }}
+            className="text-red-500 hover:text-red-700 mt-6"
+          >
+            Remove
+          </button>
+        )}
       </div>
     ));
   };
@@ -333,60 +417,20 @@ const CGPAForm: FC = () => {
       </div>
 
       <div className="flex space-x-4 justify-center">
-        <button
-          onClick={() => setActiveTab('CGPA calculator')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'CGPA calculator'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <Calculator className="w-5 h-5" />
-          CGPA Calculator
-        </button>
-        <button
-          onClick={() => setActiveTab('CGPA converter')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'CGPA converter'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <RefreshCcw className="w-5 h-5" />
-          CGPA Converter
-        </button>
-        <button
-          onClick={() => setActiveTab('semester')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'semester'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <GraduationCap className="w-5 h-5" />
-          Academic Journey
-        </button>
-        <button
-          onClick={() => setActiveTab('goals')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'goals'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <Target className="w-5 h-5" />
-          Goals
-        </button>
-        <button
-          onClick={() => setActiveTab('study')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            activeTab === 'study'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          Study Tracker
-        </button>
+        {tabItems.map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              activeTab === tab.value
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <tab.icon className="w-5 h-5" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
@@ -597,7 +641,7 @@ const CGPAForm: FC = () => {
                 <li>Add your courses using the "Add Course" button</li>
                 <li>For each course:
                   <ul className="list-disc pl-5 mt-2">
-                    <li>Enter the course name</li>
+                    <li>Enter the course code</li>
                     <li>Select your grade (includes percentage range)</li>
                     <li>Enter course units/credits (typically 1-6)</li>
                   </ul>
@@ -749,77 +793,14 @@ const CGPAForm: FC = () => {
         ) : activeTab === 'semester' ? (
           <AcademicJourney />
         ) : activeTab === 'goals' ? (
-          <GoalTracker />
+          <FeedbackForm />
         ) : (
-          <StudyTracker />
+          <HelpDocs />
         )}
       </div>
 
-
-
-      {user ? (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <h3 className="text-xl font-bold mb-2">Saved Academic Records</h3>
-          <div>
-            <label className="block text-lg font-large text-gray-700">
-              Semester
-            </label>
-            <input
-              type="number"
-              value={1}
-              min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Courses */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium">Courses</h2>
-              <button
-                type="button"
-                onClick={addCourse}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Add Course
-              </button>
-            </div>
-
-            {renderCourseInputs()}
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                loading
-                  ? 'bg-indigo-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-              }`}
-            >
-              {loading ? 'Saving...' : 'Calculate and Save CGPA'}
-            </button>
-          </div>
-        </form>
-
-      ) : (
-        <p className="text-red-500">Please log in to save your academic records</p>
-      )}
-
-      <div className="mt-4">
-                {savedRecords.map(record => (
-          <div key={record.id} className="border p-2 mb-2">
-            <p>Semester GPA: {record.gpa}</p>
-            <p>Academic Year: {record.semester}</p>
-            <p>Courses: {record.courses.length}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="text-center text-sm text-gray-600">
-        Designed and developed by{' '}
+      <div className="text-center text-sm text-gray-600 mt-4">
+        Designed and Developed by{' '}
         <a 
           href="https://github.com/s-araromi" 
           target="_blank" 
@@ -828,6 +809,23 @@ const CGPAForm: FC = () => {
         >
           Sulaimon Araromi
         </a>
+      </div>
+
+      {/* Sign Out Button */}
+      <div className="mt-8 flex justify-center">
+        <button
+          onClick={async () => {
+            try {
+              await signOut();
+              navigate('/login');
+            } catch (error) {
+              console.error('Error signing out:', error);
+            }
+          }}
+          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+        >
+          Sign Out
+        </button>
       </div>
     </div>
   );
