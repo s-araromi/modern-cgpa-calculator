@@ -8,7 +8,7 @@ const HelpDocs = () => {
       icon: <Calculator className="w-6 h-6" />,
       content: [
         'Enter your course details including name, grade, and credit units',
-        'Select from 4.0, 5.0, or 7.0 grading scales',
+        'Select from 4.0 or 5.0 grading scales',
         'Grades are automatically converted to grade points',
         'Your CGPA is calculated instantly',
         'Set target CGPA to get improvement suggestions'
@@ -18,7 +18,7 @@ const HelpDocs = () => {
       title: 'CGPA Converter',
       icon: <ArrowRightLeft className="w-6 h-6" />,
       content: [
-        'Convert between different grading scales (4.0, 5.0, 7.0)',
+        'Convert between different grading scales (4.0, 5.0)',
         'See equivalent grades across scales',
         'Understand your academic standing in different systems'
       ]
@@ -49,16 +49,6 @@ const HelpDocs = () => {
       { grade: 'C', points: '3.0', range: '50-59%' },
       { grade: 'D', points: '2.0', range: '45-49%' },
       { grade: 'F', points: '0.0', range: 'Below 45%' }
-    ],
-    '7.0 Scale': [
-      { grade: 'A', points: '7.0', range: '70-100%' },
-      { grade: 'B+', points: '6.0', range: '65-69%' },
-      { grade: 'B', points: '5.0', range: '60-64%' },
-      { grade: 'C+', points: '4.0', range: '55-59%' },
-      { grade: 'C', points: '3.0', range: '50-54%' },
-      { grade: 'D', points: '2.0', range: '45-49%' },
-      { grade: 'E', points: '1.0', range: '40-44%' },
-      { grade: 'F', points: '0.0', range: 'Below 40%' }
     ]
   };
 
@@ -130,7 +120,7 @@ const HelpDocs = () => {
               How do I convert between different scales?
             </h4>
             <p className="text-gray-600">
-              Use the CGPA Converter tab to convert between 4.0, 5.0, and 7.0 scales. The converter automatically adjusts for different grade ranges and weightings.
+              Use the CGPA Converter tab to convert between 4.0 and 5.0 scales. The converter automatically adjusts for different grade ranges and weightings.
             </p>
           </div>
           <div className="p-6 bg-white/50 backdrop-blur-md rounded-xl shadow-lg">
