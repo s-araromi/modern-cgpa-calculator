@@ -1,7 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
-import { Grade } from 'path-to-grade-definition';
 
 import { 
   BookOpen, 
@@ -23,10 +22,6 @@ import AcademicJourney from './AcademicJourney';
 import FeedbackForm  from './FeedbackForm';
 import HelpDocs from './HelpDocs';
 import { supabase } from '../config/supabase';
-
-type Grade = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
-
-
 
 interface Course {
   id: number;
@@ -150,7 +145,7 @@ const CGPAForm: FC = () => {
         id: Date.now(),
         name: '',
         credits: 0,
-        grade: '' as Grade,
+        grade: '' as string,
       }
     ]);
   };
@@ -359,7 +354,7 @@ const CGPAForm: FC = () => {
             value={course.grade}
             onChange={(e) => {
               const newCourses = [...courses];
-              newCourses[index].grade = e.target.value as Grade;
+              newCourses[index].grade = e.target.value;
               setCourses(newCourses);
             }}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
