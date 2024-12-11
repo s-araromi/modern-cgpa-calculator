@@ -307,6 +307,137 @@ const CGPAForm: FC = () => {
     ));
   };
 
+  const renderGradeScaleInfo = () => {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">Grade Scale Explanation</h3>
+        <ul className="space-y-2 list-disc pl-5">
+          <li><span className="font-semibold">4.0 Scale:</span> Standard US grading system used by most universities. A = 4.0 (Excellent), F = 0.0 (Fail)</li>
+          <li><span className="font-semibold">5.0 Scale:</span> Common in Nigerian universities. A = 5.0 (Excellent), F = 0.0 (Fail)</li>
+        </ul>
+      </div>
+    );
+  };
+
+  const renderGradePointsTable = () => {
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        {scale === '4.0' && (
+          <>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">A (70% and above)</div>
+              <div className="text-sm text-gray-600">4.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">B (60-69%)</div>
+              <div className="text-sm text-gray-600">3.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">C (50-59%)</div>
+              <div className="text-sm text-gray-600">2.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">D (45-49%)</div>
+              <div className="text-sm text-gray-600">1.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">E (40-44%)</div>
+              <div className="text-sm text-gray-600">0.5 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">F (Below 40%)</div>
+              <div className="text-sm text-gray-600">0.0 points</div>
+            </div>
+          </>
+        )}
+        {scale === '5.0' && (
+          <>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">A (70-100%)</div>
+              <div className="text-sm text-gray-600">5.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">B (60-69%)</div>
+              <div className="text-sm text-gray-600">4.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">C (50-59%)</div>
+              <div className="text-sm text-gray-600">3.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">D (45-49%)</div>
+              <div className="text-sm text-gray-600">2.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">E (40-44%)</div>
+              <div className="text-sm text-gray-600">1.0 points</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">F (Below 40%)</div>
+              <div className="text-sm text-gray-600">0.0 points</div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderHonorsClassification = () => {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">Honors Classification</h3>
+        {scale === '4.0' && (
+          <>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">First Class Honours</div>
+              <div className="text-sm text-gray-600">3.50 - 4.00</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Second Class Honours (Upper Division)</div>
+              <div className="text-sm text-gray-600">3.00 - 3.49</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Second Class Honours (Lower Division)</div>
+              <div className="text-sm text-gray-600">2.00 - 2.99</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Third Class Honours</div>
+              <div className="text-sm text-gray-600">1.50 - 1.99</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Fail</div>
+              <div className="text-sm text-gray-600">Below 1.50</div>
+            </div>
+          </>
+        )}
+        {scale === '5.0' && (
+          <>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">First Class Honours</div>
+              <div className="text-sm text-gray-600">4.50 - 5.00</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Second Class Honours (Upper Division)</div>
+              <div className="text-sm text-gray-600">3.50 - 4.49</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Second Class Honours (Lower Division)</div>
+              <div className="text-sm text-gray-600">2.50 - 3.49</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Third Class Honours</div>
+              <div className="text-sm text-gray-600">1.50 - 2.49</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="font-semibold">Fail</div>
+              <div className="text-sm text-gray-600">Below 1.50</div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="text-center mb-8 flex flex-col items-center">
@@ -339,12 +470,15 @@ const CGPAForm: FC = () => {
       <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
         {activeTab === 'CGPA calculator' ? (
           <>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Choose your Grading Scale</h3>
+            <div className="mt-4">
+              <label htmlFor="gradeScale" className="block text-sm font-medium text-gray-700">
+                Select Grade Scale
+              </label>
               <select
+                id="gradeScale"
                 value={scale}
                 onChange={(e) => setScale(e.target.value as GradeScale)}
-                className="w-full p-2 border rounded-lg"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="4.0">4.0 Scale (Standard US Scale)</option>
                 <option value="5.0">5.0 Scale (Nigerian Universities)</option>
@@ -353,118 +487,16 @@ const CGPAForm: FC = () => {
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-4">Grade Scale Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {scale === '4.0' && (
-                  <>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">A (70% and above)</div>
-                      <div className="text-sm text-gray-600">4.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">B (60-69%)</div>
-                      <div className="text-sm text-gray-600">3.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">C (50-59%)</div>
-                      <div className="text-sm text-gray-600">2.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">D (45-49%)</div>
-                      <div className="text-sm text-gray-600">1.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">E (40-44%)</div>
-                      <div className="text-sm text-gray-600">0.5 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">F (Below 40%)</div>
-                      <div className="text-sm text-gray-600">0.0 points</div>
-                    </div>
-                  </>
-                )}
-                {scale === '5.0' && (
-                  <>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">A (70-100%)</div>
-                      <div className="text-sm text-gray-600">5.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">B (60-69%)</div>
-                      <div className="text-sm text-gray-600">4.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">C (50-59%)</div>
-                      <div className="text-sm text-gray-600">3.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">D (45-49%)</div>
-                      <div className="text-sm text-gray-600">2.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">E (40-44%)</div>
-                      <div className="text-sm text-gray-600">1.0 points</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">F (0-39%)</div>
-                      <div className="text-sm text-gray-600">0.0 points</div>
-                    </div>
-                  </>
-                )}
-              </div>
+              {renderGradePointsTable()}
             </div>
 
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">Degree Classification</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {scale === '4.0' && (
-                  <>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">First Class Honours</div>
-                      <div className="text-sm text-gray-600">3.50 - 4.00</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Second Class Honours (Upper Division)</div>
-                      <div className="text-sm text-gray-600">3.00 - 3.49</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Second Class Honours (Lower Division)</div>
-                      <div className="text-sm text-gray-600">2.00 - 2.99</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Third Class Honours</div>
-                      <div className="text-sm text-gray-600">1.00 - 1.99</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Fail</div>
-                      <div className="text-sm text-gray-600">Below 1.00</div>
-                    </div>
-                  </>
-                )}
-                {scale === '5.0' && (
-                  <>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">First Class Honours</div>
-                      <div className="text-sm text-gray-600">4.50 - 5.00</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Second Class Honours (Upper Division)</div>
-                      <div className="text-sm text-gray-600">3.50 - 4.49</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Second Class Honours (Lower Division)</div>
-                      <div className="text-sm text-gray-600">2.40 - 3.49</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Third Class Honours</div>
-                      <div className="text-sm text-gray-600">1.50 - 2.39</div>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="font-semibold">Fail</div>
-                      <div className="text-sm text-gray-600">Below 1.50</div>
-                    </div>
-                  </>
-                )}
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Honors Classification</h3>
+              {renderHonorsClassification()}
+            </div>
+
+            <div className="space-y-4">
+              {renderGradeScaleInfo()}
             </div>
 
             <div className="space-y-4">
