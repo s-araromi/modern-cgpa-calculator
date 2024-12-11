@@ -12,6 +12,7 @@ declare global {
 class MockResponseWrapper implements Response {
   private _response: Response;
   private _data: any;
+  private _body: Blob;
 
   constructor(data: any, options: { 
     status?: number, 
@@ -19,9 +20,9 @@ class MockResponseWrapper implements Response {
     headers?: Record<string, string> 
   } = {}) {
     // Create a base Response object
-    const body = new Blob([JSON.stringify(data)]);
+    this._body = new Blob([JSON.stringify(data)]);
     this._data = data;
-    this._response = new Response(body, {
+    this._response = new Response(this._body, {
       status: options.status || 200,
       statusText: options.statusText || 'OK',
       headers: new Headers(options.headers)
@@ -44,6 +45,17 @@ class MockResponseWrapper implements Response {
   text() { return this._response.text(); }
   blob() { return this._response.blob(); }
   arrayBuffer() { return this._response.arrayBuffer(); }
+  
+  // Add missing formData method
+  formData(): Promise<FormData> {
+    const formData = new FormData();
+    if (typeof this._data === 'object') {
+      Object.entries(this._data).forEach(([key, value]) => {
+        formData.append(key, value as string);
+      });
+    }
+    return Promise.resolve(formData);
+  }
   
   clone(): Response {
     return new MockResponseWrapper(this._data, {
