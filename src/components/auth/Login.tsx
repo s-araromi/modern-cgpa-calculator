@@ -115,7 +115,7 @@ const Login: React.FC = () => {
             to="/register" 
             className="text-sm text-white hover:text-gray-200 underline"
           >
-            Create a new account
+            Don't have an account? Register/sign up
           </Link>
         </div>
       </div>
