@@ -55,71 +55,98 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 });
 
-interface MockResponse {
-  data?: any;
-  status?: number;
-  statusText?: string;
-  headers?: Record<string, string>;
-}
-
-interface MockRequest {
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  data?: any;
-}
-
-// Extend the global fetch type to include our mock implementation
+// Extend global interfaces to avoid type issues
 declare global {
   interface Window {
-    fetchMock?: jest.Mock;
+    fetchMock?: jest.Mock<
+      Promise<Response>, 
+      [input: RequestInfo | URL, init?: RequestInit]
+    >;
   }
 }
 
-const createMockResponse = (response: MockResponse): Response => ({
-  json: () => Promise.resolve(response.data),
-  status: response.status || 200,
-  statusText: response.statusText || 'OK',
-  ok: (response.status || 200) >= 200 && (response.status || 200) < 300,
-  headers: new Headers(response.headers),
-  text: () => Promise.resolve(JSON.stringify(response.data)),
-  blob: () => Promise.resolve(new Blob([JSON.stringify(response.data)])),
-  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-  clone: () => createMockResponse(response) as Response,
-} as Response);
+// Mock Response type to handle different input scenarios
+class MockResponse implements Response {
+  private _data: any;
+  private _status: number;
+  private _statusText: string;
+  private _headers: Headers;
 
-const mockFetch = jest.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const url = typeof input === 'string' ? input : input.toString();
-  const mockResponses = new Map<string, MockResponse>();
+  constructor(data: any, options: { 
+    status?: number, 
+    statusText?: string, 
+    headers?: Record<string, string> 
+  } = {}) {
+    this._data = data;
+    this._status = options.status || 200;
+    this._statusText = options.statusText || 'OK';
+    this._headers = new Headers(options.headers);
+  }
 
-  const defaultResponse: MockResponse = {
-    status: 404,
-    statusText: 'Not Found',
-    data: null
+  get status() { return this._status; }
+  get statusText() { return this._statusText; }
+  get ok() { return this._status >= 200 && this._status < 300; }
+  get headers() { return this._headers; }
+
+  json() { return Promise.resolve(this._data); }
+  text() { return Promise.resolve(JSON.stringify(this._data)); }
+  blob() { return Promise.resolve(new Blob([JSON.stringify(this._data)])); }
+  arrayBuffer() { return Promise.resolve(new ArrayBuffer(0)); }
+  clone() { return new MockResponse(this._data, { 
+    status: this._status, 
+    statusText: this._statusText, 
+    headers: Object.fromEntries(this._headers) 
+  }); }
+}
+
+// Custom fetch mock that handles various input types
+const createMockFetch = () => {
+  const mockResponses = new Map<string, any>();
+
+  const mockFetch = jest.fn(
+    (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      // Convert input to string URL
+      const url = input instanceof Request 
+        ? input.url 
+        : (typeof input === 'string' ? input : input.toString());
+
+      // Get response or use default
+      const responseData = mockResponses.get(url) || { 
+        data: null, 
+        status: 404, 
+        statusText: 'Not Found' 
+      };
+
+      return Promise.resolve(
+        new MockResponse(responseData.data, {
+          status: responseData.status,
+          statusText: responseData.statusText
+        })
+      );
+    }
+  );
+
+  return {
+    mockFetch,
+    mockFetchResponse: (url: string, response: any) => {
+      mockResponses.set(url, response);
+    },
+    clearMockResponses: () => {
+      mockResponses.clear();
+    }
   };
-
-  const response = mockResponses.get(url) || defaultResponse;
-  return Promise.resolve(createMockResponse(response));
-});
-
-// Override global fetch with our mock
-global.fetch = mockFetch;
-global.fetchMock = mockFetch;
-
-// Utility functions for testing
-export const mockFetchResponse = (url: string, response: MockResponse) => {
-  const mockResponses = new Map<string, MockResponse>();
-  mockResponses.set(url, {
-    status: 200,
-    statusText: 'OK',
-    ...response
-  });
 };
 
-export const clearMockFetchResponses = () => {
-  const mockResponses = new Map<string, MockResponse>();
-  mockResponses.clear();
+// Set up global fetch mock
+const { mockFetch, mockFetchResponse, clearMockResponses } = createMockFetch();
+(global as any).fetch = mockFetch;
+(global as any).window = { 
+  ...global.window, 
+  fetchMock: mockFetch 
 };
+
+// Export utility functions
+export { mockFetchResponse, clearMockResponses };
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
