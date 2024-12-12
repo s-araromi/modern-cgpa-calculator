@@ -2,14 +2,16 @@ import React, { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { 
-  BookOpen, 
+  Calculator, 
   ArrowLeftRight, 
-  Calculator,
   GraduationCap, 
+  MessageSquare, 
+  HelpCircle, 
+  PlusCircle,
+  BookOpen,
   RefreshCcw,
   Target,
   Trash2,
-  PlusCircle,
   Calendar,
   BookOpenCheck
 } from 'lucide-react';
@@ -57,34 +59,25 @@ const CGPAForm: FC = () => {
   const [savedRecords, setSavedRecords] = useState<SavedRecord[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('CGPA calculator');
 
-  const gradeOptions = Object.keys(gradePoints[scale]);
+  const getGradeOptions = (scale: GradeScale): Grade[] => {
+    switch (scale) {
+      case '4.0':
+        return ['A', 'B', 'C', 'D', 'E', 'F'];
+      case '5.0':
+        return ['A', 'B', 'C', 'D', 'E', 'F'];
+      case '7.0':
+        return ['A', 'B+', 'B', 'C+', 'C', 'D', 'E', 'F'];
+    }
+  };
+
+  const gradeOptions = getGradeOptions(scale);
 
   const tabItems = [
-    {
-      icon: Calculator,
-      label: 'CGPA calculator',
-      value: 'CGPA calculator'
-    },
-    {
-      icon: RefreshCcw,
-      label: 'CGPA converter',
-      value: 'CGPA converter'
-    },
-    {
-      icon: Calendar,
-      label: 'Academic Journey',
-      value: 'semester'
-    },
-    {
-      icon: Target,
-      label: 'Feedback',
-      value: 'goals'
-    },
-    {
-      icon: BookOpenCheck,
-      label: 'Help Docs',
-      value: 'study'
-    }
+    { label: 'CGPA Calculator', value: 'CGPA calculator', icon: Calculator },
+    { label: 'CGPA Converter', value: 'CGPA converter', icon: ArrowLeftRight },
+    { label: 'Academic Journey', value: 'semester', icon: GraduationCap },
+    { label: 'Feedback', value: 'goals', icon: MessageSquare },
+    { label: 'Help', value: 'help', icon: HelpCircle },
   ];
 
   // Fetch saved academic records when component mounts or user changes
@@ -345,8 +338,8 @@ const CGPAForm: FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col">
-      <div className="container mx-auto max-w-20xl w-full flex-grow">
+    <div className="min-h-screen bg-gray-50 p-4 flex flex-col">
+      <div className="container mx-auto max-w-6xl w-full flex-grow px-6">
         {/* Gradient Logo */}
         <div className="text-center mb-8 flex flex-col items-center">
           <div className="flex items-center justify-center space-x-4">
@@ -375,7 +368,7 @@ const CGPAForm: FC = () => {
           {tabItems.map(tab => (
             <button
               key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
+              onClick={() => setActiveTab(tab.value as ActiveTab)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                 activeTab === tab.value
                   ? 'bg-indigo-600 text-white'
