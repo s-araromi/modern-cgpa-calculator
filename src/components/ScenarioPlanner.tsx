@@ -16,7 +16,7 @@ interface Scenario {
   improvement: number;
 }
 
-type GradeScale = '4.0' | '5.0' | '7.0';
+type GradeScale = '4.0' | '5.0';
 
 interface ScenarioPlannerProps {
   currentCourses: Course[];

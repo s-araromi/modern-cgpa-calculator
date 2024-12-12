@@ -22,7 +22,7 @@ interface Achievement {
 interface AchievementSystemProps {
   courses: Course[];
   currentCGPA: number;
-  scale: '4.0' | '5.0' | '7.0';
+  scale: '4.0' | '5.0';
   previousCGPA?: number;
   consecutiveImprovement: number;
   totalCredits: number;

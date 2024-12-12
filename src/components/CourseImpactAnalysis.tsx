@@ -7,7 +7,7 @@ interface Course {
   credits: number;
 }
 
-type GradeScale = '4.0' | '5.0' | '7.0';
+type GradeScale = '4.0' | '5.0';
 type GradePoints = Record<GradeScale, Record<string, number>>;
 
 interface Props {

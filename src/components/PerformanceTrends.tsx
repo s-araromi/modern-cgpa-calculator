@@ -37,7 +37,7 @@ interface Course {
 interface PerformanceTrendsProps {
   cgpa: number | null;
   previousCGPA: number | null;
-  scale: '4.0' | '5.0' | '7.0';
+  scale: '4.0' | '5.0';
   consecutiveImprovement: number;
   totalCredits: number;
   courses?: Course[];
