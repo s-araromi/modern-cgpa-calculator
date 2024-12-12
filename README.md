@@ -1,158 +1,85 @@
-# GRADIENT - Modern CGPA Calculator
+# Modern CGPA Calculator 📊🎓
 
-A modern, intuitive CGPA Calculator built with React and TypeScript, designed to help students track and analyze their academic performance with ease. Try it live at [Modern CGPA Calculator](https://modern-cgpa-calculator.vercel.app/)
+## Overview
+Modern CGPA Calculator is an advanced, user-friendly web application designed to help students track, calculate, and analyze their academic performance with precision and ease.
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.1-38B2AC)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+## 🌟 Features
+- **CGPA Calculator**: Accurately calculate your cumulative GPA
+- **Scale Converter**: Convert GPAs between different grading scales (4.0, 5.0, 7.0)
+- **Academic Journey Tracking**: Monitor your academic progress
+- **Performance Analysis**: Gain insights into your academic performance
+- **Responsive Design**: Works seamlessly across devices
 
-## Features
+## 🚀 Technologies
+- **Frontend**: React with TypeScript
+- **State Management**: React Hooks
+- **Styling**: Tailwind CSS
+- **Authentication**: Supabase
+- **Build Tool**: Vite
+- **Package Manager**: Yarn
 
-### Smart CGPA Calculation
-- Support for multiple grading scales (4.0, 5.0, and 7.0)
-- Real-time CGPA updates as you input courses
-- Intelligent input validation
-- Easy course management with add/remove functionality
+## 🔧 Prerequisites
+- Node.js (v16+)
+- Yarn
+- Git
 
-### Performance Analytics
-- Comprehensive grade distribution analysis
-- Performance trend tracking
-- Detailed course summary
-- Visual progress indicators
+## 📦 Installation
 
-### Modern User Interface
-- Clean and intuitive design
-- Fully responsive layout
-- Accessible on all devices
-- Real-time feedback and validation
-
-### Cross-Platform Support
-- Works seamlessly on desktop and mobile
-- Optimized for various screen sizes
-- Consistent experience across devices
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/s-araromi/modern-cgpa-calculator.git
 cd modern-cgpa-calculator
 ```
 
-2. Install dependencies
+### 2. Install Dependencies
 ```bash
-npm install
-# or
 yarn install
 ```
 
-3. Start the development server
+### 3. Set Up Environment Variables
+Create a `.env` file in the project root with:
+```
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 4. Run the Development Server
 ```bash
-npm run dev
-# or
 yarn dev
 ```
 
-## Tech Stack
+## 🌈 Usage
+1. Sign up or log in
+2. Select your grading scale
+3. Enter course details (code, units, grades)
+4. Calculate and track your CGPA
+5. Use the scale converter to compare different grading systems
 
-- **Frontend**: React 18.2.0 with TypeScript
-- **Styling**: Tailwind CSS for modern UI
-- **Build Tool**: Vite for fast development
-- **Icons**: Lucide React for beautiful icons
-- **Deployment**: Vercel for seamless hosting
+## 📊 Grading Scales Supported
+- 4.0 Scale
+- 5.0 Scale
+- 7.0 Scale
 
-## Responsive Design
+## 🔒 Authentication
+Secure authentication powered by Supabase, ensuring your academic data remains private.
 
-Fully tested and optimized for:
-- Desktop (1920x1080+)
-- Laptop (1366x768)
-- Tablet (768x1024)
-- Mobile (320x568+)
+## 🤝 Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Usage Guide
+## 📝 License
+Distributed under the MIT License. See `LICENSE` for more information.
 
-### Calculating Your CGPA
+## 📞 Contact
+Sulaimon Araromi - [@s_araromi](https://twitter.com/s_araromi)
+Project Link: [https://github.com/s-araromi/modern-cgpa-calculator](https://github.com/s-araromi/modern-cgpa-calculator)
 
-1. **Select Your Grading Scale**
-   - Choose between 4.0, 5.0, or 7.0 scales
-   - View detailed grade ranges and points
-
-2. **Add Your Courses**
-   - Click "Add Course" button
-   - Enter course name
-   - Select your grade
-   - Input course credits (1-6)
-
-3. **Calculate CGPA**
-   - Click "Calculate CGPA"
-   - View your CGPA and performance analysis
-   - Track your academic progress
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- React and TypeScript communities
-- Tailwind CSS team
-- All contributors and users
-
-## Contact
-
-- GitHub: [s-araromi](https://github.com/s-araromi)
-- Project Link: [modern-cgpa-calculator](https://github.com/s-araromi/modern-cgpa-calculator)
-
-## Development
-
-### Project Structure
-```
-src/
-├── components/        # React components
-│   ├── CGPAForm/     # Main calculator component
-│   ├── AcademicJourney/  # Progress tracking
-│   └── Analytics/    # Performance analytics
-├── hooks/            # Custom React hooks
-├── types/            # TypeScript type definitions
-├── utils/            # Utility functions
-└── App.tsx           # Main application component
-```
-
-### Key Components
-- `CGPAForm`: Main calculator interface
-- `AcademicJourney`: Semester and progress tracking
-- `Analytics`: Performance metrics and visualizations
-- `PDFExport`: Report generation functionality
-
-### Best Practices
-- TypeScript for type safety
-- Functional components with hooks
-- Responsive design principles
-- Progressive enhancement
-- Accessibility considerations
-
-## Future Enhancements
-
-- Advanced analytics dashboard
-- Custom grading scale support
-- Academic goal setting
-- Performance predictions
-- Course recommendation system
-- Dark mode support
-- Data import/export
-- Mobile app version
-
-## Support
-
-If you found this project helpful, please consider giving it a star on GitHub!
+## 🙏 Acknowledgements
+- React
+- TypeScript
+- Supabase
+- Tailwind CSS
+- Vite
