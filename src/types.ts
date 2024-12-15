@@ -4,24 +4,7 @@ export type Grade = BaseGrade | ExtendedGrade;
 
 export type GradeScale = '4.0' | '5.0' | '7.0';
 
-export const gradePoints: Record<BaseGrade, number> = {
-  'A': 4.0,
-  'B': 3.0,
-  'C': 2.0,
-  'D': 1.0,
-  'E': 0.5,
-  'F': 0.0
-};
-
-export const extendedGradePoints: Record<ExtendedGrade, number> = {
-  ...gradePoints,
-  'A+': 4.5,
-  'B+': 3.5,
-  'C+': 2.5,
-  'D+': 1.5
-};
-
-export const gradePointsByScale: Record<GradeScale, Record<Grade, number>> = {
+export const gradePoints: Record<GradeScale, Record<Grade, number>> = {
   '4.0': {
     'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'E': 0.5, 'F': 0.0,
     'A+': 4.0, 'B+': 3.0, 'C+': 2.0, 'D+': 1.0
@@ -36,7 +19,7 @@ export const gradePointsByScale: Record<GradeScale, Record<Grade, number>> = {
   }
 };
 
-export type GradePoints = Record<GradeScale, Record<Grade, number>>;
+export type GradePoints = typeof gradePoints;
 
 export type ActiveTab = 
   | 'CGPA calculator' 

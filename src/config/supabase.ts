@@ -43,11 +43,7 @@ export interface Course {
 const supabaseOptions: SupabaseClientOptions<'public'> = {
   auth: {
     persistSession: true,
-    debug: true,
-    // Add custom event listeners for authentication debugging
-    onAuthStateChange: (event: AuthChangeEvent, session: Session | null) => {
-      logAuthEvent(event, session);
-    }
+    debug: true
   }
 };
 
