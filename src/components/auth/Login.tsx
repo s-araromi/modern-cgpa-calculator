@@ -18,7 +18,7 @@ const Login: React.FC = () => {
     try {
       const success = await signIn(email, password);
       if (success) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setError(authError || 'Failed to sign in');
       }
@@ -59,9 +59,12 @@ const Login: React.FC = () => {
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" aria-label="Login Form">
           {(error || authError) && (
-            <div className="bg-red-500 bg-opacity-20 text-white p-4 rounded-lg text-center">
+            <div 
+              className="bg-red-500 bg-opacity-20 text-white p-4 rounded-lg text-center"
+              role="alert"
+            >
               {error || authError}
             </div>
           )}
@@ -72,7 +75,9 @@ const Login: React.FC = () => {
             </label>
             <input
               id="email"
+              name="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -80,6 +85,7 @@ const Login: React.FC = () => {
               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent 
               text-white placeholder-gray-300"
               placeholder="Enter your email"
+              aria-required="true"
             />
           </div>
 
@@ -89,7 +95,9 @@ const Login: React.FC = () => {
             </label>
             <input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -97,6 +105,7 @@ const Login: React.FC = () => {
               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent 
               text-white placeholder-gray-300"
               placeholder="Enter your password"
+              aria-required="true"
             />
           </div>
 
@@ -104,26 +113,21 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-md text-white font-semibold transition-all duration-300 
-              ${loading 
-                ? 'bg-purple-400 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50'
-              }`}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+              bg-gradient-to-r from-purple-600 to-blue-700 hover:from-purple-700 hover:to-blue-800 
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
 
           <div className="text-center mt-4">
-            <p className="text-white text-sm">
-              Don't have an account?{' '}
-              <Link 
-                to="/signup" 
-                className="text-blue-300 hover:text-blue-200 underline transition duration-300"
-              >
-                Sign Up
-              </Link>
-            </p>
+            <Link 
+              to="/register" 
+              className="text-sm text-white hover:underline"
+            >
+              Don't have an account? Register
+            </Link>
           </div>
         </form>
       </div>
