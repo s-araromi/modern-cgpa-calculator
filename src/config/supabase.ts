@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 // Use environment variables with fallback to local Supabase development settings
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -9,10 +9,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Enhanced logging for authentication
-function logAuthEvent(event: string, data?: any) {
+function logAuthEvent(event: AuthChangeEvent, session: Session | null) {
   console.group('Supabase Auth Debug');
   console.log(`Event: ${event}`);
-  if (data) console.log('Data:', data);
+  if (session) console.log('Session:', session);
   console.groupEnd();
 }
 
@@ -45,18 +45,18 @@ export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
     persistSession: true,
     debug: true,
     // Add custom event listeners for authentication debugging
-    onAuthStateChange: (event, session) => {
-      logAuthEvent('Auth State Change', { event, session });
+    onAuthStateChange: (event: AuthChangeEvent, session: Session | null) => {
+      logAuthEvent(event, session);
     }
   }
 });
 
 // Attach additional logging to Supabase methods
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
   if (event === 'SIGNED_IN') {
-    logAuthEvent('User Signed In', session?.user);
+    logAuthEvent('SIGNED_IN', session);
   } else if (event === 'SIGNED_OUT') {
-    logAuthEvent('User Signed Out');
+    logAuthEvent('SIGNED_OUT', null);
   }
 });
 
