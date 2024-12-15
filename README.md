@@ -19,36 +19,69 @@ Modern CGPA Calculator is an advanced, user-friendly web application designed to
 - **Package Manager**: Yarn
 
 ## 🔧 Prerequisites
-- Node.js (v16+)
-- Yarn
-- Git
+- Node.js (v18+)
+- Yarn package manager
+- Supabase account
 
-## 📦 Installation
+## 🚀 Deployment Guide
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/s-araromi/modern-cgpa-calculator.git
-cd modern-cgpa-calculator
-```
-
-### 2. Install Dependencies
-```bash
-yarn install
-```
-
-### 3. Set Up Environment Variables
-Create a `.env` file in the project root with:
-```
+### Environment Variables
+Create a `.env` file in the project root with the following:
+```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 4. Run the Development Server
-```bash
-yarn dev
-```
+### Deployment Options
 
-## 🌈 Usage
+#### 1. Vercel (Recommended)
+1. Install Vercel CLI: `npm i -g vercel`
+2. Login to Vercel: `vercel login`
+3. Deploy: `vercel`
+
+#### 2. Netlify
+1. Install Netlify CLI: `npm i -g netlify-cli`
+2. Login to Netlify: `netlify login`
+3. Deploy: `netlify deploy`
+   - For production: `netlify deploy --prod`
+
+#### 3. Render
+1. Create a `render.yaml` in project root:
+```yaml
+services:
+  - type: web
+    name: modern-cgpa-calculator
+    env: static
+    buildCommand: yarn build
+    staticPublishPath: ./dist
+```
+2. Connect your GitHub repository on Render
+
+#### 4. GitHub Pages
+1. Install gh-pages: `yarn add -D gh-pages`
+2. Add to `package.json`:
+```json
+{
+  "scripts": {
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d dist"
+  }
+}
+```
+3. Deploy: `yarn deploy`
+
+### Post-Deployment
+- Ensure Supabase project is configured
+- Set up CORS in Supabase
+- Configure environment variables in deployment platform
+
+## 🛠 Local Development
+1. Clone the repository
+2. Install dependencies: `yarn install`
+3. Set up environment variables
+4. Run development server: `yarn dev`
+
+## 📊 Usage
 1. Sign up or log in
 2. Select your grading scale
 3. Enter course details (code, units, grades)
