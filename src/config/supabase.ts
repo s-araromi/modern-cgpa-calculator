@@ -1,4 +1,4 @@
-import { createClient, Session, AuthChangeEvent, SupabaseClientOptions } from '@supabase/supabase-js';
+import { createClient, Session, AuthChangeEvent, SupabaseClientOptions, SupabaseClient } from '@supabase/supabase-js';
 
 // Use environment variables with fallback to local Supabase development settings
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -40,7 +40,7 @@ export interface Course {
 }
 
 // Define Supabase client options explicitly
-const supabaseOptions: SupabaseClientOptions = {
+const supabaseOptions: SupabaseClientOptions<'public'> = {
   auth: {
     persistSession: true,
     debug: true,
@@ -52,7 +52,7 @@ const supabaseOptions: SupabaseClientOptions = {
 };
 
 // Supabase client initialization with error handling and logging
-export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, supabaseOptions);
+export const supabase: SupabaseClient = createClient(supabaseUrl!, supabaseAnonKey!, supabaseOptions);
 
 // Attach additional logging to Supabase methods
 supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {

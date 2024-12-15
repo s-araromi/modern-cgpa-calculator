@@ -36,7 +36,7 @@ export const gradePointsByScale: Record<GradeScale, Record<Grade, number>> = {
   }
 };
 
-export type GradePoints = typeof gradePointsByScale;
+export type GradePoints = Record<GradeScale, Record<Grade, number>>;
 
 export type ActiveTab = 
   | 'CGPA calculator' 
