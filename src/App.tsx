@@ -13,6 +13,10 @@ import { PrivateRoute } from './components/auth/PrivateRoute';
 
 const router = createBrowserRouter([
   {
+    path: '/',
+    element: <Navigate to="/login" replace />
+  },
+  {
     path: '/login',
     element: <Login />
   },
@@ -50,10 +54,6 @@ const router = createBrowserRouter([
         )}
       </PrivateRoute>
     )
-  },
-  {
-    path: '/',
-    element: <Navigate to="/dashboard" replace />
   }
 ]);
 
