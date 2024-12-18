@@ -126,6 +126,10 @@ const CGPAForm: FC = () => {
     setCourses(newCourses);
   };
 
+  const extractBaseGrade = (grade: Grade): Grade => {
+    return grade.split(' ')[0] as Grade;
+  };
+
   const calculateCGPA = () => {
     setLoading(true);
     setCGPA(null);
@@ -144,7 +148,8 @@ const CGPAForm: FC = () => {
 
       // Calculate total points and credits
       const { totalPoints, credits } = courses.reduce((acc, course) => {
-        const gradePoint = gradePoints[scale][course.grade.replace(/[^A-Z]/g, '')];
+        const baseGrade = extractBaseGrade(course.grade);
+        const gradePoint = gradePoints[scale][course.grade];
         return {
           totalPoints: acc.totalPoints + (gradePoint * course.credits),
           credits: acc.credits + course.credits
@@ -214,21 +219,18 @@ const CGPAForm: FC = () => {
   };
 
   const calculateGPA = (courses: Course[]): number => {
-    const gradePoints: { [key: string]: number } = {
-      'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
-    };
-
     let totalPoints = 0;
     let totalCredits = 0;
 
     courses.forEach(course => {
       if (course.grade && course.credits) {
-        totalPoints += gradePoints[course.grade.replace(/[^A-Z]/g, '')] * course.credits;
+        const gradePoint = gradePoints[scale][course.grade];
+        totalPoints += gradePoint * course.credits;
         totalCredits += course.credits;
       }
     });
 
-    return totalCredits === 0 ? 0 : Number((totalPoints / totalCredits).toFixed(2));
+    return totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(2)) : 0;
   };
 
   const getCGPAClassification = (cgpa: number, scale: GradeScale): string => {
