@@ -45,7 +45,7 @@ interface SavedRecord {
 const initialCourse: Course = {
   id: crypto.randomUUID(),
   name: '',
-  grade: 'F',
+  grade: 'F (0-39%)',
   credits: 0
 };
 
@@ -62,11 +62,11 @@ const CGPAForm: FC = () => {
   const getGradeOptions = (scale: GradeScale): Grade[] => {
     switch (scale) {
       case '4.0':
-        return ['A', 'B', 'C', 'D', 'E', 'F'];
+        return ['A (70-100%)', 'B (60-69%)', 'C (50-59%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
       case '5.0':
-        return ['A', 'B', 'C', 'D', 'E', 'F'];
+        return ['A (70-100%)', 'B (60-69%)', 'C (50-59%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
       case '7.0':
-        return ['A', 'B+', 'B', 'C+', 'C', 'D', 'E', 'F'];
+        return ['A (70-100%)', 'B+ (65-69%)', 'B (60-64%)', 'C+ (55-59%)', 'C (50-54%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
     }
   };
 
@@ -106,7 +106,7 @@ const CGPAForm: FC = () => {
     const newCourse: Course = {
       id: crypto.randomUUID(),
       name: '',
-      grade: 'F',
+      grade: 'F (0-39%)',
       credits: 0
     };
     setCourses([...courses, newCourse]);
@@ -144,7 +144,7 @@ const CGPAForm: FC = () => {
 
       // Calculate total points and credits
       const { totalPoints, credits } = courses.reduce((acc, course) => {
-        const gradePoint = gradePoints[scale][course.grade];
+        const gradePoint = gradePoints[scale][course.grade.replace(/[^A-Z]/g, '')];
         return {
           totalPoints: acc.totalPoints + (gradePoint * course.credits),
           credits: acc.credits + course.credits
@@ -223,7 +223,7 @@ const CGPAForm: FC = () => {
 
     courses.forEach(course => {
       if (course.grade && course.credits) {
-        totalPoints += gradePoints[course.grade] * course.credits;
+        totalPoints += gradePoints[course.grade.replace(/[^A-Z]/g, '')] * course.credits;
         totalCredits += course.credits;
       }
     });
