@@ -1,18 +1,30 @@
 import { createClient, Session, AuthChangeEvent, SupabaseClientOptions, SupabaseClient } from '@supabase/supabase-js';
 
-// Use environment variables with fallback to local Supabase development settings
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+// Strict environment variable loading
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+// Enhanced error handling for environment variables
+if (!supabaseUrl) {
+  console.error('❌ Missing Supabase URL');
+  throw new Error('VITE_SUPABASE_URL must be provided in .env file');
+}
+
+if (!supabaseAnonKey) {
+  console.error('❌ Missing Supabase Anon Key');
+  throw new Error('VITE_SUPABASE_ANON_KEY must be provided in .env file');
 }
 
 // Enhanced logging for authentication
 function logAuthEvent(event: AuthChangeEvent, session: Session | null) {
-  console.group('Supabase Auth Debug');
+  console.group('🔐 Supabase Auth Debug');
   console.log(`Event: ${event}`);
-  if (session) console.log('Session:', session);
+  if (session) {
+    console.log('Session Details:', {
+      user: session.user?.email,
+      expiresAt: session.expires_at
+    });
+  }
   console.groupEnd();
 }
 
@@ -39,27 +51,44 @@ export interface Course {
   credits: number;
 }
 
-// Define Supabase client options explicitly
+// Define Supabase client options with robust configuration
 const supabaseOptions: SupabaseClientOptions<'public'> = {
   auth: {
     persistSession: true,
-    debug: true
-  }
+    debug: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'Modern CGPA Calculator',
+    },
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
 };
 
-// Supabase client initialization with error handling and logging
-export const supabase: SupabaseClient = createClient(supabaseUrl!, supabaseAnonKey!, supabaseOptions);
+// Supabase client initialization with comprehensive error handling
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions);
 
-// Attach additional logging to Supabase methods
-supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-  if (event === 'SIGNED_IN') {
-    logAuthEvent('SIGNED_IN', session);
-  } else if (event === 'SIGNED_OUT') {
-    logAuthEvent('SIGNED_OUT', null);
+// Global error handler (corrected method)
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('🔔 Auth State Changed:', event);
+  
+  switch (event) {
+    case 'SIGNED_IN':
+      console.log('✅ User signed in successfully');
+      break;
+    case 'SIGNED_OUT':
+      console.log('🚪 User signed out');
+      break;
+    case 'TOKEN_REFRESHED':
+      console.log('🔄 Authentication token refreshed');
+      break;
+    default:
+      console.log(`📡 Unhandled auth event: ${event}`);
   }
 });
-
-// Add a check to ensure Supabase is properly initialized
-if (!supabase) {
-  console.error('Failed to initialize Supabase client');
-}

@@ -1,31 +1,44 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, FormEvent } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { signIn, error: authError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setIsLoading(true);
 
     try {
+      // Validate inputs
+      if (!email || !password) {
+        setError('Please enter both email and password');
+        return;
+      }
+
+      // Attempt sign in
       const success = await signIn(email, password);
+
       if (success) {
+        // Redirect to dashboard on successful login
         navigate('/dashboard');
       } else {
-        setError(authError || 'Failed to sign in');
+        // Generic error if sign in fails
+        setError('Invalid email or password. Please try again.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in');
+      // Catch any unexpected errors
+      console.error('Login error:', err);
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -60,12 +73,12 @@ const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6" aria-label="Login Form">
-          {(error || authError) && (
+          {error && (
             <div 
               className="bg-red-500 bg-opacity-20 text-white p-4 rounded-lg text-center"
               role="alert"
             >
-              {error || authError}
+              {error}
             </div>
           )}
 
@@ -112,24 +125,33 @@ const Login: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
               bg-gradient-to-r from-purple-600 to-blue-700 hover:from-purple-700 hover:to-blue-800 
               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
+        </form>
 
-          <div className="text-center mt-4">
+        <div className="mt-6 text-center">
+          <Link 
+            to="/forgot-password" 
+            className="text-sm text-white hover:underline block mb-2"
+          >
+            Forgot Password?
+          </Link>
+          <p className="text-sm text-white">
+            Don't have an account? {' '}
             <Link 
               to="/register" 
-              className="text-sm text-white hover:underline"
+              className="font-semibold text-white hover:underline"
             >
-              Don't have an account? Register
+              Register
             </Link>
-          </div>
-        </form>
+          </p>
+        </div>
       </div>
     </div>
   );

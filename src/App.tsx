@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   createBrowserRouter, 
   RouterProvider,
@@ -9,7 +9,9 @@ import { AuthProvider } from './components/auth/AuthContext';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import ForgotPassword from './components/auth/ForgotPassword';
 import { PrivateRoute } from './components/auth/PrivateRoute';
+import { injectAuthTestScript } from './utils/injectAuthTest';
 
 const router = createBrowserRouter([
   {
@@ -23,6 +25,10 @@ const router = createBrowserRouter([
   {
     path: '/register',
     element: <Register />
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />
   },
   {
     path: '/admin',
@@ -58,6 +64,11 @@ const router = createBrowserRouter([
 ]);
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Inject authentication test script in development
+    injectAuthTestScript();
+  }, []);
+
   return (
     <AuthProvider>
       <RouterProvider router={router} />

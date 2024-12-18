@@ -8,9 +8,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    define: {
-      __APP_ENV__: JSON.stringify(env.APP_ENV),
-    },
     plugins: [react()],
     resolve: {
       alias: {
@@ -18,15 +15,30 @@ export default defineConfig(({ mode }) => {
       },
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
     },
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+    },
     server: {
       port: 5173,
       strictPort: true,
+      cors: {
+        origin: [
+          'http://localhost:5173',
+          env.VITE_SUPABASE_URL,
+          'https://wznucutrzwxjeqqnwirj.supabase.co',
+        ].filter(Boolean),
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-supabase-client-info'],
+      },
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-supabase-client-info',
+      },
       hmr: {
         protocol: 'ws',
         host: 'localhost'
-      },
-      headers: {
-        'Access-Control-Allow-Origin': '*'
       }
     },
     build: {
