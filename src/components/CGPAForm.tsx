@@ -26,10 +26,10 @@ import { supabase } from '../config/supabase';
 import { GradeScale, Grade, GradePoints, gradePoints, ActiveTab } from '../types';
 
 interface Course {
-  id: string;
   name: string;
-  grade: Grade;
+  code: string;
   credits: number;
+  grade: Grade;
 }
 
 interface SavedRecord {
@@ -43,10 +43,10 @@ interface SavedRecord {
 
 // Initial course state
 const initialCourse: Course = {
-  id: crypto.randomUUID(),
   name: '',
-  grade: 'F (0-39%)',
-  credits: 0
+  code: '',
+  credits: 0,
+  grade: 'F'
 };
 
 const CGPAForm: FC = () => {
@@ -62,11 +62,11 @@ const CGPAForm: FC = () => {
   const getGradeOptions = (scale: GradeScale): Grade[] => {
     switch (scale) {
       case '4.0':
-        return ['A (70-100%)', 'B (60-69%)', 'C (50-59%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
+        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
       case '5.0':
-        return ['A (70-100%)', 'B (60-69%)', 'C (50-59%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
+        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
       case '7.0':
-        return ['A (70-100%)', 'B+ (65-69%)', 'B (60-64%)', 'C+ (55-59%)', 'C (50-54%)', 'D (45-49%)', 'E (40-44%)', 'F (0-39%)'];
+        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
     }
   };
 
@@ -104,10 +104,10 @@ const CGPAForm: FC = () => {
 
   const addCourse = () => {
     const newCourse: Course = {
-      id: crypto.randomUUID(),
       name: '',
-      grade: 'F (0-39%)',
-      credits: 0
+      code: '',
+      credits: 0,
+      grade: 'F'
     };
     setCourses([...courses, newCourse]);
   };
@@ -148,7 +148,6 @@ const CGPAForm: FC = () => {
 
       // Calculate total points and credits
       const { totalPoints, credits } = courses.reduce((acc, course) => {
-        const baseGrade = extractBaseGrade(course.grade);
         const gradePoint = gradePoints[scale][course.grade];
         return {
           totalPoints: acc.totalPoints + (gradePoint * course.credits),
@@ -268,6 +267,24 @@ const CGPAForm: FC = () => {
           </label>
           <input
             type="text"
+            value={course.code}
+            onChange={(e) => {
+              const newCourses = [...courses];
+              newCourses[index].code = e.target.value;
+              setCourses(newCourses);
+            }}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="e.g. MTH101"
+          />
+        </div>
+
+        {/* Course Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Course Name
+          </label>
+          <input
+            type="text"
             value={course.name}
             onChange={(e) => {
               const newCourses = [...courses];
@@ -275,7 +292,7 @@ const CGPAForm: FC = () => {
               setCourses(newCourses);
             }}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            placeholder="e.g. MTH101"
+            placeholder="e.g. Mathematics"
           />
         </div>
 
@@ -646,7 +663,7 @@ const CGPAForm: FC = () => {
                     <div className="mt-6">
                       <h4 className="font-semibold mb-2">Course Summary:</h4>
                       {courses.map(course => (
-                        <div key={course.id} className="flex justify-between py-2 border-b">
+                        <div key={course.code} className="flex justify-between py-2 border-b">
                           <span>{course.name}</span>
                           <span className="text-gray-600">
                             Grade: {course.grade} | Credits: {course.credits}
