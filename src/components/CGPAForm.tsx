@@ -26,10 +26,10 @@ import { supabase } from '../config/supabase';
 import { GradeScale, Grade, GradePoints, gradePoints, ActiveTab } from '../types';
 
 interface Course {
+  id: string;
   name: string;
-  code: string;
-  credits: number;
   grade: Grade;
+  credits: number;
 }
 
 interface SavedRecord {
@@ -43,10 +43,10 @@ interface SavedRecord {
 
 // Initial course state
 const initialCourse: Course = {
+  id: crypto.randomUUID(),
   name: '',
-  code: '',
-  credits: 0,
-  grade: 'F'
+  grade: 'F',
+  credits: 0
 };
 
 const CGPAForm: FC = () => {
@@ -62,11 +62,11 @@ const CGPAForm: FC = () => {
   const getGradeOptions = (scale: GradeScale): Grade[] => {
     switch (scale) {
       case '4.0':
-        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
+        return ['A', 'B', 'C', 'D', 'E', 'F'];
       case '5.0':
-        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
+        return ['A', 'B', 'C', 'D', 'E', 'F'];
       case '7.0':
-        return ['A', 'B', 'C', 'D', 'E', 'F', 'B+', 'C+'];
+        return ['A', 'B+', 'B', 'C+', 'C', 'D', 'E', 'F'];
     }
   };
 
@@ -104,10 +104,10 @@ const CGPAForm: FC = () => {
 
   const addCourse = () => {
     const newCourse: Course = {
+      id: crypto.randomUUID(),
       name: '',
-      code: '',
-      credits: 0,
-      grade: 'F'
+      grade: 'F',
+      credits: 0
     };
     setCourses([...courses, newCourse]);
   };
@@ -124,10 +124,6 @@ const CGPAForm: FC = () => {
   const removeCourse = (index: number) => {
     const newCourses = courses.filter((_, i) => i !== index);
     setCourses(newCourses);
-  };
-
-  const extractBaseGrade = (grade: Grade): Grade => {
-    return grade.split(' ')[0] as Grade;
   };
 
   const calculateCGPA = () => {
@@ -218,18 +214,21 @@ const CGPAForm: FC = () => {
   };
 
   const calculateGPA = (courses: Course[]): number => {
+    const gradePoints: { [key: string]: number } = {
+      'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
+    };
+
     let totalPoints = 0;
     let totalCredits = 0;
 
     courses.forEach(course => {
       if (course.grade && course.credits) {
-        const gradePoint = gradePoints[scale][course.grade];
-        totalPoints += gradePoint * course.credits;
+        totalPoints += gradePoints[course.grade] * course.credits;
         totalCredits += course.credits;
       }
     });
 
-    return totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(2)) : 0;
+    return totalCredits === 0 ? 0 : Number((totalPoints / totalCredits).toFixed(2));
   };
 
   const getCGPAClassification = (cgpa: number, scale: GradeScale): string => {
@@ -267,24 +266,6 @@ const CGPAForm: FC = () => {
           </label>
           <input
             type="text"
-            value={course.code}
-            onChange={(e) => {
-              const newCourses = [...courses];
-              newCourses[index].code = e.target.value;
-              setCourses(newCourses);
-            }}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            placeholder="e.g. MTH101"
-          />
-        </div>
-
-        {/* Course Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Course Name
-          </label>
-          <input
-            type="text"
             value={course.name}
             onChange={(e) => {
               const newCourses = [...courses];
@@ -292,7 +273,7 @@ const CGPAForm: FC = () => {
               setCourses(newCourses);
             }}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            placeholder="e.g. Mathematics"
+            placeholder="e.g. MTH101"
           />
         </div>
 
@@ -663,7 +644,7 @@ const CGPAForm: FC = () => {
                     <div className="mt-6">
                       <h4 className="font-semibold mb-2">Course Summary:</h4>
                       {courses.map(course => (
-                        <div key={course.code} className="flex justify-between py-2 border-b">
+                        <div key={course.id} className="flex justify-between py-2 border-b">
                           <span>{course.name}</span>
                           <span className="text-gray-600">
                             Grade: {course.grade} | Credits: {course.credits}
